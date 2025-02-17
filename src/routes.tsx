@@ -1,20 +1,19 @@
 import { Route, Routes } from "react-router-dom";
 
 import IndexPage from "@/pages/index";
-import DocsPage from "@/pages/docs";
-import PricingPage from "@/pages/pricing";
-import BlogPage from "@/pages/blog";
-import AboutPage from "@/pages/about";
+import DefaultLayout from "./layouts/default";
+import Category from "./pages/category";
+import PdfPage from "./pages/pdf";
 
 function App() {
   return (
-    <Routes>
-      <Route element={<IndexPage />} path="/" />
-      <Route element={<DocsPage />} path="/docs" />
-      <Route element={<PricingPage />} path="/pricing" />
-      <Route element={<BlogPage />} path="/blog" />
-      <Route element={<AboutPage />} path="/about" />
-    </Routes>
+    <DefaultLayout>
+      <Routes>
+        <Route element={<IndexPage />} path="/" />
+        <Route element={<Category />} path="/category/:id?" />
+        <Route element={<PdfPage />} path="/read/:fileName?" />
+      </Routes>
+    </DefaultLayout>
   );
 }
 
