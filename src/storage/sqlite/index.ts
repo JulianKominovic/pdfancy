@@ -19,7 +19,7 @@ export type SqliteWorkerRunResponse = {
   opts?: (ExecBaseOptions & ExecRowModeArrayOptions & ExecReturnThisOptions) & {
     sql?: undefined;
   };
-  results: Record<string, any>[];
+  results: any[];
 };
 export type SqliteWorkerMessages = SqliteWorkerRunMessage;
 

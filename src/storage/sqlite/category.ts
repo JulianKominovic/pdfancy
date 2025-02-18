@@ -37,13 +37,15 @@ const sqliteCategory = {
         });
     }
   },
-  get(name: string) {
-    return sqlite.run("SELECT * FROM category WHERE name = ?", {
-      bind: [name],
+  get(id: number) {
+    return sqlite.run("SELECT * FROM category WHERE id = ?", {
+      bind: [id],
     });
   },
-  getAll() {
-    return sqlite.run("SELECT * FROM category");
+  getAll(): Promise<{ results: (SqliteCategory & { fileCount: number })[] }> {
+    return sqlite.run(
+      "SELECT *, COUNT(fileXcategory.fileId) as fileCount FROM category LEFT JOIN fileXcategory ON category.id = fileXcategory.categoryId GROUP BY category.id"
+    );
   },
 };
 

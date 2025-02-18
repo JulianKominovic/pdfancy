@@ -69,6 +69,41 @@ const initializeSQLite = async () => {
         sql: "ALTER TABLE file ADD COLUMN name TEXT;",
       })
     );
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN creator TEXT;",
+      })
+    );
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN date TEXT;",
+      })
+    );
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN progressPercent INTEGER;",
+      })
+    );
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN readSeconds INTEGER;",
+      })
+    );
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN readPages INTEGER;",
+      })
+    );
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN pages INTEGER;",
+      })
+    );
+
+    // Create table fileXcategory
+    db.exec({
+      sql: "CREATE TABLE IF NOT EXISTS fileXcategory (fileId INTEGER, categoryId INTEGER, PRIMARY KEY (fileId, categoryId));",
+    });
 
     // Log tables
     const tables = db.exec({

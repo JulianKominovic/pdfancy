@@ -9,8 +9,8 @@ export default function DefaultLayout({
 }) {
   return (
     <>
-      <svg
-        className="pointer-events-none fixed isolate z-50 opacity-70 mix-blend-soft-light"
+      {/* <svg
+        className="fixed z-50 pointer-events-none isolate opacity-70 mix-blend-soft-light"
         width="100%"
         height="100%"
       >
@@ -23,10 +23,10 @@ export default function DefaultLayout({
           />
         </filter>
         <rect width="100%" height="100%" filter="url(#noise)" />
-      </svg>
-      <div className="relative z-10 h-screen flex gap-8 ">
+      </svg> */}
+      <div className="relative z-10 flex h-screen gap-6">
         <Navbar />
-        <main className="overflow-auto w-full">{children}</main>
+        <main className="w-full px-2 overflow-auto">{children}</main>
       </div>
     </>
   );
