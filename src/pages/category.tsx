@@ -19,7 +19,7 @@ const Category = () => {
   const category = categories.find((c) => c.id === Number(id));
   const updateOrAddCategory = useCategoriesStore((s) => s.updateOrAddCategory);
   const addFileToCategory = useCategoriesStore((s) => s.addFileToCategory);
-
+  console.log("category", category);
   if (!category) return null;
   if (category.color) {
     document.documentElement.style.setProperty(

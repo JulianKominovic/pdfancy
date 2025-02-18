@@ -2,12 +2,12 @@ import { Button } from "@heroui/button";
 import { NavLink as RouterLink } from "react-router-dom";
 import { PlusCircle, Trash } from "lucide-react";
 import clsx from "clsx";
+import { Chip } from "@heroui/chip";
 
 import sqlite from "@/storage/sqlite";
 import useCategoriesStore from "@/stores/categories";
 import { PAPER_COLORS } from "@/constants";
 import vFilesCache from "@/storage/cache/files";
-import { Chip } from "@heroui/chip";
 export const Navbar = () => {
   const classNameFn = ({ isActive }: any) =>
     clsx(isActive ? "opacity-100" : "opacity-50", "flex items-center gap-1");
@@ -34,7 +34,7 @@ export const Navbar = () => {
               />
               {category.name || "No name"}{" "}
               <Chip color="primary" variant="flat" size="sm">
-                {category.fileCount}
+                {category.fileCount ?? 0}
               </Chip>
             </RouterLink>
           </li>

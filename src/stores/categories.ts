@@ -36,12 +36,21 @@ const useCategoriesStore = create<CategoriesStore>((set, get) => ({
     if (oldCategories.find((c) => c.id === category.id)) {
       set({
         categories: oldCategories.map((c) =>
-          c.id === updatedCategory.id ? { ...c, ...updatedCategory } : c
+          c.id === updatedCategory.id
+            ? {
+                ...c,
+                ...updatedCategory,
+                files: updatedCategory.files || [],
+              }
+            : c
         ),
       });
     } else {
       set({
-        categories: [...oldCategories, updatedCategory as any],
+        categories: [
+          ...oldCategories,
+          { ...updatedCategory, files: updatedCategory.files || [] },
+        ],
       });
     }
 

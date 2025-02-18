@@ -1,4 +1,5 @@
-const worker = new Worker("/worker.js", { type: "module" });
+import wrk from "../worker.js?worker";
+const worker = new wrk();
 let workerIsReady = false;
 
 export async function getWorker(): Promise<Worker> {
