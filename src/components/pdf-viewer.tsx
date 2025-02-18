@@ -306,17 +306,17 @@
 
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Document, Outline, Page } from "react-pdf";
 import { PDFDocumentProxy } from "pdfjs-dist";
 
-import { VList } from "virtua";
-type Props = {};
+// import { VList } from "virtua";
+// type Props = {};
 
 const PdfViewer = ({ file }: { file: File }) => {
   const [doc, setDoc] = useState<PDFDocumentProxy | null>();
   const numPages = doc?.numPages;
-  const [highlightedText, setHighlightedText] = useState<Selection | null>();
+  // const [highlightedText, setHighlightedText] = useState<Selection | null>();
   const [width, setWidth] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -364,8 +364,8 @@ const PdfViewer = ({ file }: { file: File }) => {
         }}
         onMouseUp={() => {
           const selectedText = window.getSelection();
-          const start = selectedText?.anchorOffset;
-          const end = selectedText?.focusOffset;
+          // const start = selectedText?.anchorOffset;
+          // const end = selectedText?.focusOffset;
 
           if (selectedText) {
             // setHighlightedText(selectedText);

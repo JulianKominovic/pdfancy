@@ -80,7 +80,7 @@ const Category = () => {
         ev.currentTarget.style.backgroundColor = "transparent";
 
         if (ev.dataTransfer.items) {
-          [...ev.dataTransfer.items].forEach((item, i) => {
+          [...ev.dataTransfer.items].forEach((item) => {
             if (item.kind === "file") {
               const file = item.getAsFile();
               saveFile(file);

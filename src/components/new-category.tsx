@@ -1,10 +1,3 @@
-// import {
-//   Drawer,
-//   DrawerContent,
-//   DrawerHeader,
-//   DrawerBody,
-//   DrawerFooter,
-// } from "@heroui/drawer";
 import {
   Modal,
   ModalBody,
@@ -15,7 +8,7 @@ import {
 import { Input } from "@heroui/input";
 import { Checkbox } from "@heroui/checkbox";
 import { Link } from "@heroui/link";
-import { MailIcon, LockIcon, Hash, Text } from "lucide-react";
+import { Hash, Text } from "lucide-react";
 import { Button } from "@heroui/button";
 
 import useDrawersStore from "@/stores/drawers";
@@ -36,7 +29,7 @@ export default function NewCategory() {
             <ModalBody>
               <Input
                 endContent={
-                  <Hash className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
+                  <Hash className="flex-shrink-0 text-2xl pointer-events-none text-default-400" />
                 }
                 label="Name"
                 placeholder="Enter the name for this category"
@@ -44,14 +37,14 @@ export default function NewCategory() {
               />
               <Input
                 endContent={
-                  <Text className="text-2xl text-default-400 pointer-events-none flex-shrink-0" />
+                  <Text className="flex-shrink-0 text-2xl pointer-events-none text-default-400" />
                 }
                 label="Description"
                 placeholder="Enter your password"
                 type="password"
                 variant="bordered"
               />
-              <div className="flex py-2 px-1 justify-between">
+              <div className="flex justify-between px-1 py-2">
                 <Checkbox
                   classNames={{
                     label: "text-small",
