@@ -1,10 +1,6 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ButtonGroup, Button } from "@heroui/button";
-import { getDocument } from "pdfjs-dist";
-import { Card, CardFooter, CardHeader } from "@heroui/card";
-import { Image } from "@heroui/image";
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
-import { Plus } from "lucide-react";
 
 import useCategoriesStore from "@/stores/categories";
 import { PASTEL_COLORS } from "@/constants";
@@ -20,7 +16,6 @@ const Category = () => {
   const categories = useCategoriesStore((s) => s.categories);
   const category = categories.find((c) => c.id === Number(id));
   const updateOrAddCategory = useCategoriesStore((s) => s.updateOrAddCategory);
-  const addFileToCategory = useCategoriesStore((s) => s.addFileToCategory);
 
   if (!category) return null;
   if (category.color) {
