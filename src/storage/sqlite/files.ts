@@ -5,7 +5,7 @@ export type SqliteFile = {
   name: string;
   date?: string;
   creator?: string;
-  progressPercent: number;
+  scrollPosition?: number;
   readSeconds: number;
   readPages: number;
   pages: number;
@@ -14,14 +14,14 @@ const sqliteFile = {
   async updateOrAdd(file: SqliteFile) {
     return sqlite
       .run(
-        "INSERT OR REPLACE INTO file (id, name, date, creator, progressPercent, readSeconds, readPages, pages) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
+        "INSERT OR REPLACE INTO file (id, name, date, creator, scrollPosition, readSeconds, readPages, pages) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *",
         {
           bind: [
             file.id,
             file.name,
             file.date,
             file.creator,
-            file.progressPercent,
+            file.scrollPosition,
             file.readSeconds,
             file.readPages,
             file.pages,

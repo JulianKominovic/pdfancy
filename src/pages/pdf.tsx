@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 
 import PdfViewer from "@/components/pdf-viewer";
 import vFilesCache from "@/storage/cache/files";
+import { Skeleton } from "@heroui/skeleton";
 
 const PdfPage = () => {
   const { fileName } = useParams();
@@ -21,9 +22,13 @@ const PdfPage = () => {
         }
       });
   }, []);
-  if (!file) return <p>Loading...</p>;
-
-  return <PdfViewer file={file} />;
+  if (!file || !fileName)
+    return (
+      <div className="flex flex-col items-center justify-center w-full h-full p-8">
+        <Skeleton className="w-full h-full rounded-lg" />
+      </div>
+    );
+  return <PdfViewer file={file} fileId={fileName} />;
 };
 
 export default PdfPage;

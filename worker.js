@@ -81,11 +81,6 @@ const initializeSQLite = async () => {
     );
     ignoreErrors(() =>
       db.exec({
-        sql: "ALTER TABLE file ADD COLUMN progressPercent INTEGER;",
-      })
-    );
-    ignoreErrors(() =>
-      db.exec({
         sql: "ALTER TABLE file ADD COLUMN readSeconds INTEGER;",
       })
     );
@@ -99,7 +94,11 @@ const initializeSQLite = async () => {
         sql: "ALTER TABLE file ADD COLUMN pages INTEGER;",
       })
     );
-
+    ignoreErrors(() =>
+      db.exec({
+        sql: "ALTER TABLE file ADD COLUMN scrollPosition INTEGER;",
+      })
+    );
     // Create table fileXcategory
     db.exec({
       sql: "CREATE TABLE IF NOT EXISTS fileXcategory (fileId INTEGER, categoryId INTEGER, PRIMARY KEY (fileId, categoryId));",

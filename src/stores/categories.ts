@@ -40,7 +40,7 @@ const useCategoriesStore = create<CategoriesStore>((set, get) => ({
             ? {
                 ...c,
                 ...updatedCategory,
-                files: updatedCategory.files || [],
+                files: updatedCategory.files || c.files || [],
               }
             : c
         ),

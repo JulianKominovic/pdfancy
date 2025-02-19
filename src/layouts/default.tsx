@@ -22,9 +22,9 @@ export default function DefaultLayout({
         </filter>
         <rect width="100%" height="100%" filter="url(#noise)" />
       </svg> */}
-      <div className="relative z-10 flex h-screen gap-6">
+      <div className="relative z-10 flex h-screen">
         <Navbar />
-        <main className="w-full px-2 overflow-auto">{children}</main>
+        <main className="w-full px-6 overflow-auto">{children}</main>
       </div>
     </>
   );
