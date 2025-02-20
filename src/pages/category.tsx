@@ -70,7 +70,7 @@ const Category = () => {
         placeholder="Description"
         style={
           {
-            "field-sizing": "content",
+            fieldSizing: "content",
           } as any
         }
         value={category.description}

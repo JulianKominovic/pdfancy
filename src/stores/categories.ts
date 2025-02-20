@@ -12,7 +12,7 @@ const categoriesDb = new Promise<IDBDatabase>((resolve, reject) => {
     switch (event.oldVersion) {
       // Client don't have db installed
       case 0:
-        db.createObjectStore("categories");
+        db.createObjectStore("categories", { keyPath: "id" });
         break;
       case 1:
         break;
