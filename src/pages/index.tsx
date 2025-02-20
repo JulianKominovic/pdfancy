@@ -1,5 +1,6 @@
-import useCategoriesStore from "@/stores/categories";
 import CategoryFiles from "@/components/category-files";
+import { useCategoriesStore } from "@/stores/categories";
+
 export default function IndexPage() {
   const categories = useCategoriesStore((s) => s.categories);
   return (

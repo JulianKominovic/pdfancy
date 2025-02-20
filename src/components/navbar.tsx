@@ -4,18 +4,19 @@ import { PlusCircle, Trash } from "lucide-react";
 import clsx from "clsx";
 import { Chip } from "@heroui/chip";
 
-import sqlite from "@/storage/sqlite";
-import useCategoriesStore from "@/stores/categories";
 import { PASTEL_COLORS } from "@/constants";
 import vFilesCache from "@/storage/cache/files";
 import { stringToHsl } from "@/utils/color";
+import { useCategoriesStore } from "@/stores/categories";
 export const Navbar = () => {
   const classNameFn = ({ isActive }: any) =>
     clsx(isActive ? "opacity-100" : "opacity-50", "flex items-center gap-1");
   const categories = useCategoriesStore((s) => s.categories);
-  const updateOrAddCategory = useCategoriesStore((s) => s.updateOrAddCategory);
+  const addOrSetCategory = useCategoriesStore((s) => s.addOrSetCategory);
+  const destroy = useCategoriesStore((s) => s.destroy);
   const color = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
   const navigate = useNavigate();
+
   return (
     <nav className="flex-shrink-0 w-64 h-full px-4 py-8">
       <ul className="flex flex-col">
@@ -40,7 +41,7 @@ export const Navbar = () => {
                 />
                 {category.name || "No name"}{" "}
                 <Chip color="primary" variant="flat" size="sm">
-                  {category.fileCount ?? 0}
+                  {category.files.length}
                 </Chip>
               </RouterLink>
             </li>
@@ -52,15 +53,13 @@ export const Navbar = () => {
             size="md"
             color="primary"
             onPress={() => {
-              updateOrAddCategory({
+              const category = addOrSetCategory({
                 name: "New category",
                 color: `hsl(${color.h}, ${color.s}%, ${color.l}%)`,
                 description: "Add a description here",
                 files: [],
-              }).then((category) => {
-                if ((category as any)?.id)
-                  navigate(`/category/${(category as any).id}`);
               });
+              navigate(`/category/${category.id}`);
             }}
           >
             <PlusCircle size={16} /> category
@@ -73,13 +72,7 @@ export const Navbar = () => {
         color="danger"
         variant="shadow"
         onPress={() => {
-          sqlite
-            .run("SELECT name FROM sqlite_master WHERE type='table';")
-            .then(({ results }) => {
-              results.forEach(({ name }) => {
-                sqlite.run(`DROP TABLE ${name};`);
-              });
-            });
+          destroy();
           vFilesCache.deleteAllFiles();
         }}
       >

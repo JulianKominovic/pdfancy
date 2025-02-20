@@ -3,25 +3,20 @@ import { Plus } from "lucide-react";
 import { getDocument } from "pdfjs-dist";
 import { Link } from "react-router-dom";
 
-import useCategoriesStore from "@/stores/categories";
-import { SqliteFile } from "@/storage/sqlite/files";
-import { SqliteCategory } from "@/storage/sqlite/category";
+import { Category, useCategoriesStore } from "@/stores/categories";
 
-const CategoryFiles = ({
-  category,
-}: {
-  category: SqliteCategory & { files: SqliteFile[] };
-}) => {
-  const addFileToCategory = useCategoriesStore((s) => s.addFileToCategory);
+const CategoryFiles = ({ category }: { category: Category }) => {
+  const addFileToCategory = useCategoriesStore((s) => s.attachFile);
   // Prevent default behavior (Prevent file from being opened)
   async function saveFile(file: File | null) {
-    if (file?.type.includes("pdf") && category?.id) {
+    if (file?.type.includes("pdf") && category.id) {
       const pdfProxy = await getDocument(await file.arrayBuffer()).promise;
       const pages = pdfProxy.numPages;
       const fileMetadata = await pdfProxy.getMetadata();
       const metadata = fileMetadata.metadata?.getAll();
 
       addFileToCategory(
+        file,
         {
           name:
             (fileMetadata.info as any)?.["Title"] ||
@@ -37,11 +32,10 @@ const CategoryFiles = ({
             metadata?.["CreationDate"] ||
             (fileMetadata.info as any)?.["CreationDate"] ||
             "",
-          readSeconds: 0,
+          scrollPosition: 0,
           readPages: 0,
           pages: pages,
         },
-        file,
         category.id
       );
     }
@@ -52,8 +46,8 @@ const CategoryFiles = ({
         <Card
           isFooterBlurred
           as={Link}
-          key={file.id + "file" + file.name}
-          to={"/read/" + file.id}
+          key={file.id + category.id + "file"}
+          to={"/category/" + category.id + "/" + file.id}
           isPressable
           isHoverable
           shadow="md"
@@ -80,7 +74,6 @@ const CategoryFiles = ({
         className="items-center justify-center min-w-0 p-4 text-center cursor-pointer text-black/60 aspect-square size-64 bg-primary-100 "
         htmlFor="file-input"
         onDragEnd={(ev) => {
-          console.log("File(s) dropped");
           ev.currentTarget.style.backgroundColor = "transparent";
         }}
         onDragOver={(ev) => {
@@ -89,7 +82,6 @@ const CategoryFiles = ({
         }}
         onDrop={(ev) => {
           ev.preventDefault();
-          console.log("File(s) dropped");
 
           ev.currentTarget.style.backgroundColor = "transparent";
 

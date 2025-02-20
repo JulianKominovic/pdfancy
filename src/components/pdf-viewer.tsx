@@ -312,11 +312,19 @@ import { PDFDocumentProxy } from "pdfjs-dist";
 import { Skeleton } from "@heroui/skeleton";
 import { List as VList } from "react-virtualized";
 
-import useFilesStore from "@/stores/files";
 import { useDebounceFunction } from "@/hooks/use-debounce-fn";
+import loggers from "@/utils/loggers";
+import { CategoryFile, useCategoriesStore } from "@/stores/categories";
 
-const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
-  const files = useFilesStore((state) => state.files);
+const PdfViewer = ({
+  file,
+  categoryFile,
+  categoryId,
+}: {
+  file: File;
+  categoryFile: CategoryFile;
+  categoryId: string;
+}) => {
   const [pagesSizes, setPagesSizes] = useState<
     {
       width: number;
@@ -325,8 +333,7 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
   >([]);
   const [scrollRestored, setScrollRestored] = useState(false);
   const [scale, _setScale] = useState(1);
-  const updateOrAddFile = useFilesStore((state) => state.updateOrAddFile);
-  const fileObject = files.find((f) => f.id === Number(fileId));
+  const updateFile = useCategoriesStore((s) => s.updateFile);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>();
   const numPages = doc?.numPages;
   // const [highlightedText, setHighlightedText] = useState<Selection | null>();
@@ -334,7 +341,7 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const vlistRef = useRef<VList | null>(null);
   const { debounce } = useDebounceFunction(100);
-  const { debounce: updateOrAddFileDebounced } = useDebounceFunction(300);
+  const { debounce: updateFileDebounced } = useDebounceFunction(300);
 
   function onItemClick({ pageNumber }: { pageNumber: number }) {
     if (vlistRef.current) {
@@ -366,11 +373,11 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
     };
   }, []);
   return (
-    <div className="relative flex h-full gap-8 overflow-hidden">
+    <div className="relative flex justify-between h-full gap-8 overflow-hidden">
       <Document
         inputRef={wrapperRef}
         className={
-          "h-full overflow-y-auto overflow-x-hidden flex-grow max-w-screen-md"
+          "h-full overflow-y-auto mx-auto overflow-x-hidden flex-grow max-w-screen-md"
         }
         file={file}
         onLoadSuccess={async (d) => {
@@ -395,15 +402,16 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
 
           if (selectedText) {
             // setHighlightedText(selectedText);
-            console.log(selectedText);
+            loggers.layers.component("selectedText", selectedText);
           }
         }}
       >
         {numPages && width && pagesSizes.length === numPages && (
+          // @ts-ignore
           <VList
             ref={vlistRef}
             scrollTop={
-              scrollRestored ? undefined : fileObject?.scrollPosition || 0
+              scrollRestored ? undefined : categoryFile?.scrollPosition || 0
             }
             width={width}
             height={wrapperRef.current?.clientHeight || 0}
@@ -413,8 +421,8 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
               setScrollRestored(true);
             }}
             onScroll={({ scrollTop }) => {
-              if (fileObject && scrollRestored) {
-                updateOrAddFileDebounced(() => {
+              if (categoryFile && scrollRestored) {
+                updateFileDebounced(() => {
                   const bounds: DOMRect =
                     wrapperRef.current?.getBoundingClientRect()!;
                   const pageElements = document.elementsFromPoint(
@@ -424,11 +432,14 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
                   const pageNumber = pageElements
                     .find((el) => el.hasAttribute("data-page-number"))
                     ?.getAttribute("data-page-number");
-                  updateOrAddFile({
-                    ...fileObject,
-                    scrollPosition: scrollTop,
-                    readPages: Number(pageNumber),
-                  });
+                  updateFile(
+                    {
+                      ...categoryFile,
+                      scrollPosition: scrollTop,
+                      readPages: Number(pageNumber),
+                    },
+                    categoryId
+                  );
                 });
               }
             }}
@@ -460,10 +471,12 @@ const PdfViewer = ({ file, fileId }: { file: File; fileId: string }) => {
           />
         )}
       </Document>
-      <div className="flex-shrink-0 h-full overflow-x-hidden w-72">
+      <div className="flex-shrink-0 h-[calc(100%-32px)] py-8 overflow-x-hidden w-72">
         {doc && (
           <Outline
-            className={"[&__ul]:pl-6 h-full w-full"}
+            className={
+              "[&__ul]:pl-6 [&__ul]:space-y-2 [&__li]:text-primary-900/60 [&__a:hover]:underline [&__a:hover]:underline-offset-2 [&__a:hover]:text-primary-900 h-full w-full"
+            }
             pdf={doc}
             onItemClick={onItemClick}
           />

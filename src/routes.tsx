@@ -1,17 +1,19 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 
-import IndexPage from "@/pages/index";
 import DefaultLayout from "./layouts/default";
 import Category from "./pages/category";
 import PdfPage from "./pages/pdf";
+
+import IndexPage from "@/pages/index";
 
 function App() {
   return (
     <DefaultLayout>
       <Routes>
         <Route element={<IndexPage />} path="/" />
-        <Route element={<Category />} path="/category/:id?" />
-        <Route element={<PdfPage />} path="/read/:fileName?" />
+        <Route element={<Category />} path="/category/:categoryId?" />
+        <Route element={<PdfPage />} path="/category/:categoryId/:fileId" />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </DefaultLayout>
   );

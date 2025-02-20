@@ -12,7 +12,6 @@ import { Hash, Text } from "lucide-react";
 import { Button } from "@heroui/button";
 
 import useDrawersStore from "@/stores/drawers";
-import sqlite from "@/storage/sqlite";
 
 export default function NewCategory() {
   const isOpen = useDrawersStore((s) => s.showNewCategoryDrawer);
@@ -61,12 +60,7 @@ export default function NewCategory() {
               <Button color="danger" variant="flat" onPress={onClose}>
                 Close
               </Button>
-              <Button
-                color="primary"
-                onPress={() => {
-                  sqlite.run("SELECT * FROM category");
-                }}
-              >
+              <Button color="primary" onPress={() => {}}>
                 Sign in
               </Button>
             </ModalFooter>

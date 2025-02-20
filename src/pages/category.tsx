@@ -2,99 +2,35 @@ import { useParams } from "react-router-dom";
 import { ButtonGroup, Button } from "@heroui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
 
-import useCategoriesStore from "@/stores/categories";
+import { useCategoriesStore } from "@/stores/categories";
 import { PASTEL_COLORS } from "@/constants";
-import {
-  stringToHsl,
-  stripHslString,
-  colorPalleteFromHslPastelColor,
-} from "@/utils/color";
 import CategoryFiles from "@/components/category-files";
+import { applyCategoryColor } from "@/utils/customize";
 
 const Category = () => {
-  const { id } = useParams();
+  const { categoryId } = useParams();
   const categories = useCategoriesStore((s) => s.categories);
-  const category = categories.find((c) => c.id === Number(id));
-  const updateOrAddCategory = useCategoriesStore((s) => s.updateOrAddCategory);
+  const category = categories.find((c) => c.id === categoryId);
+  const addOrSetCategory = useCategoriesStore((s) => s.addOrSetCategory);
 
   if (!category) return null;
-  if (category.color) {
-    const pallete = colorPalleteFromHslPastelColor(stringToHsl(category.color));
-    document.documentElement.style.setProperty("--bg-color", category.color);
 
-    document.documentElement.style.setProperty(
-      "--heroui-content2",
-      stripHslString(pallete[200])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-content3",
-      stripHslString(pallete[400])
-    );
-
-    document.documentElement.style.setProperty(
-      "--heroui-primary",
-      stripHslString(category.color)
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-50",
-      stripHslString(pallete[50])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-100",
-      stripHslString(pallete[100])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-200",
-      stripHslString(pallete[200])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-300",
-      stripHslString(pallete[300])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-400",
-      stripHslString(pallete[400])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-500",
-      stripHslString(pallete[500])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-600",
-      stripHslString(pallete[600])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-700",
-      stripHslString(pallete[700])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-800",
-      stripHslString(pallete[800])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-900",
-      stripHslString(pallete[900])
-    );
-    document.documentElement.style.setProperty(
-      "--heroui-primary-950",
-      stripHslString(pallete[950])
-    );
-  }
+  applyCategoryColor(category);
 
   return (
     <div className="min-h-screen pt-8">
       <div className="flex items-start gap-4">
         <ButtonGroup>
           <Popover placement="bottom">
-            <PopoverTrigger isIconOnly variant="shadow">
-              <Button color="secondary">
-                <div
-                  className="size-6 aspect-square rounded-[50%]"
-                  style={{
-                    backgroundColor: category.color,
-                  }}
-                />
-              </Button>
+            <PopoverTrigger>
+              <div
+                className="p-2 cursor-pointer rounded-xl"
+                style={{
+                  backgroundColor: category.color,
+                }}
+              >
+                <div className="size-6 bg-black aspect-square rounded-[50%] shadow-medium" />
+              </div>
             </PopoverTrigger>
             <PopoverContent
               aria-label="Color"
@@ -104,7 +40,7 @@ const Category = () => {
                 <Button
                   key={`hsl(${h}, ${s}%, ${l}%)`}
                   onPress={() => {
-                    updateOrAddCategory({
+                    addOrSetCategory({
                       ...category,
                       color: `hsl(${h}, ${s}%, ${l}%)`,
                     });
@@ -125,7 +61,7 @@ const Category = () => {
           onChange={(e) => {
             const value = e.currentTarget.value;
 
-            updateOrAddCategory({ ...category, name: value });
+            addOrSetCategory({ ...category, name: value });
           }}
         />
       </div>
@@ -141,7 +77,7 @@ const Category = () => {
         onChange={(e) => {
           const value = e.currentTarget.value;
 
-          updateOrAddCategory({ ...category, description: value });
+          addOrSetCategory({ ...category, description: value });
         }}
       />
       <h2 className="mb-4 text-2xl font-medium text-black/60">
