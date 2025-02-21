@@ -311,19 +311,24 @@ import { Document, Outline, Page } from "react-pdf";
 import { PDFDocumentProxy } from "pdfjs-dist";
 import { Skeleton } from "@heroui/skeleton";
 import { List as VList } from "react-virtualized";
+import { Tabs, Tab } from "@heroui/tabs";
 
 import { useDebounceFunction } from "@/hooks/use-debounce-fn";
 import loggers from "@/utils/loggers";
-import { CategoryFile, useCategoriesStore } from "@/stores/categories";
+import { FolderFile, useFoldersStore } from "@/stores/folders";
+import { Card, CardBody } from "@heroui/card";
+import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
+import { createPortal } from "react-dom";
+import TextSelectionPopover from "./text-selection-popover";
 
 const PdfViewer = ({
   file,
-  categoryFile,
-  categoryId,
+  folderFile,
+  folderId,
 }: {
   file: File;
-  categoryFile: CategoryFile;
-  categoryId: string;
+  folderFile: FolderFile;
+  folderId: string;
 }) => {
   const [pagesSizes, setPagesSizes] = useState<
     {
@@ -333,10 +338,11 @@ const PdfViewer = ({
   >([]);
   const [scrollRestored, setScrollRestored] = useState(false);
   const [scale, _setScale] = useState(1);
-  const updateFile = useCategoriesStore((s) => s.updateFile);
+  const updateFile = useFoldersStore((s) => s.updateFile);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>();
+  const [selection, setSelection] = useState<{} | null>(null);
   const numPages = doc?.numPages;
-  // const [highlightedText, setHighlightedText] = useState<Selection | null>();
+
   const [width, setWidth] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const vlistRef = useRef<VList | null>(null);
@@ -372,8 +378,12 @@ const PdfViewer = ({
       resizeObserver.disconnect();
     };
   }, []);
+
   return (
-    <div className="relative flex justify-between h-full gap-8 overflow-hidden">
+    <div
+      className="relative flex justify-between h-full gap-8 overflow-hidden"
+      data-text-reader="true"
+    >
       <Document
         inputRef={wrapperRef}
         className={
@@ -395,23 +405,13 @@ const PdfViewer = ({
           setPagesSizes(pagesSizes);
         }}
         loading={<Skeleton className="w-full h-full rounded-lg" />}
-        onMouseUp={() => {
-          const selectedText = window.getSelection();
-          // const start = selectedText?.anchorOffset;
-          // const end = selectedText?.focusOffset;
-
-          if (selectedText) {
-            // setHighlightedText(selectedText);
-            loggers.layers.component("selectedText", selectedText);
-          }
-        }}
       >
         {numPages && width && pagesSizes.length === numPages && (
           // @ts-ignore
           <VList
             ref={vlistRef}
             scrollTop={
-              scrollRestored ? undefined : categoryFile?.scrollPosition || 0
+              scrollRestored ? undefined : folderFile?.scrollPosition || 0
             }
             width={width}
             height={wrapperRef.current?.clientHeight || 0}
@@ -421,7 +421,7 @@ const PdfViewer = ({
               setScrollRestored(true);
             }}
             onScroll={({ scrollTop }) => {
-              if (categoryFile && scrollRestored) {
+              if (folderFile && scrollRestored) {
                 updateFileDebounced(() => {
                   const bounds: DOMRect =
                     wrapperRef.current?.getBoundingClientRect()!;
@@ -434,11 +434,11 @@ const PdfViewer = ({
                     ?.getAttribute("data-page-number");
                   updateFile(
                     {
-                      ...categoryFile,
+                      ...folderFile,
                       scrollPosition: scrollTop,
                       readPages: Number(pageNumber),
                     },
-                    categoryId
+                    folderId
                   );
                 });
               }
@@ -448,7 +448,7 @@ const PdfViewer = ({
             }
             rowRenderer={({ index, style }) => (
               <Page
-                className={"!bg-transparent"}
+                className={"!bg-transparent relative"}
                 devicePixelRatio={Math.min(2, window.devicePixelRatio)}
                 width={width}
                 key={`page_${index + 1}`}
@@ -471,16 +471,32 @@ const PdfViewer = ({
           />
         )}
       </Document>
-      <div className="flex-shrink-0 h-[calc(100%-32px)] py-8 overflow-x-hidden w-72">
-        {doc && (
-          <Outline
-            className={
-              "[&__ul]:pl-6 [&__ul]:space-y-2 [&__li]:text-primary-900/60 [&__a:hover]:underline [&__a:hover]:underline-offset-2 [&__a:hover]:text-primary-900 h-full w-full"
-            }
-            pdf={doc}
-            onItemClick={onItemClick}
-          />
-        )}
+
+      <div className="flex-shrink-0 h-[calc(100%-32px)] py-4 overflow-visible w-72">
+        <Tabs
+          aria-label="Options"
+          classNames={{
+            base: "w-full mb-2",
+            tabList: "w-full bg-content2",
+            cursor: "bg-content1",
+            panel:
+              "bg-content2 h-[calc(100%-12px)] overflow-y-auto rounded-medium",
+          }}
+        >
+          <Tab key="outline" title="Outline">
+            {doc && (
+              <Outline
+                className={
+                  "[&__ul]:pl-6 [&__ul]:space-y-2 [&__li]:text-primary-900/60 [&__a:hover]:underline [&__a:hover]:underline-offset-2 [&__a:hover]:text-primary-900 h-full w-full"
+                }
+                pdf={doc}
+                onItemClick={onItemClick}
+              />
+            )}
+          </Tab>
+          <Tab key="highlights" title="Highlights"></Tab>
+          <Tab key="notes" title="Notes"></Tab>
+        </Tabs>
       </div>
     </div>
   );

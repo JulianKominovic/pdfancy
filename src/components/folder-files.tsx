@@ -3,19 +3,19 @@ import { Plus } from "lucide-react";
 import { getDocument } from "pdfjs-dist";
 import { Link } from "react-router-dom";
 
-import { Category, useCategoriesStore } from "@/stores/categories";
+import { Folder, useFoldersStore } from "@/stores/folders";
 
-const CategoryFiles = ({ category }: { category: Category }) => {
-  const addFileToCategory = useCategoriesStore((s) => s.attachFile);
+const FolderFiles = ({ folder }: { folder: Folder }) => {
+  const addFileToFolder = useFoldersStore((s) => s.attachFile);
   // Prevent default behavior (Prevent file from being opened)
   async function saveFile(file: File | null) {
-    if (file?.type.includes("pdf") && category.id) {
+    if (file?.type.includes("pdf") && folder.id) {
       const pdfProxy = await getDocument(await file.arrayBuffer()).promise;
       const pages = pdfProxy.numPages;
       const fileMetadata = await pdfProxy.getMetadata();
       const metadata = fileMetadata.metadata?.getAll();
 
-      addFileToCategory(
+      addFileToFolder(
         file,
         {
           name:
@@ -35,19 +35,20 @@ const CategoryFiles = ({ category }: { category: Category }) => {
           scrollPosition: 0,
           readPages: 0,
           pages: pages,
+          highlights: [],
         },
-        category.id
+        folder.id
       );
     }
   }
   return (
-    <section className="flex flex-wrap gap-4">
-      {category.files.map((file) => (
+    <section className="flex flex-wrap gap-4 overflow-visible">
+      {folder.files.map((file) => (
         <Card
           isFooterBlurred
           as={Link}
-          key={file.id + category.id + "file"}
-          to={"/category/" + category.id + "/" + file.id}
+          key={file.id + folder.id + "file"}
+          to={"/folder/" + folder.id + "/" + file.id}
           isPressable
           isHoverable
           shadow="md"
@@ -70,8 +71,8 @@ const CategoryFiles = ({ category }: { category: Category }) => {
         as={"label"}
         isPressable
         isHoverable
-        shadow="sm"
-        className="items-center justify-center min-w-0 p-4 text-center cursor-pointer text-black/60 aspect-square size-64 bg-primary-100 "
+        shadow="md"
+        className="items-center justify-center min-w-0 p-4 text-center cursor-pointer text-black/60 aspect-square size-64 bg-primary-100"
         htmlFor="file-input"
         onDragEnd={(ev) => {
           ev.currentTarget.style.backgroundColor = "transparent";
@@ -119,4 +120,4 @@ const CategoryFiles = ({ category }: { category: Category }) => {
   );
 };
 
-export default CategoryFiles;
+export default FolderFiles;

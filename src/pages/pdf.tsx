@@ -4,16 +4,16 @@ import { Skeleton } from "@heroui/skeleton";
 
 import PdfViewer from "@/components/pdf-viewer";
 import vFilesCache from "@/storage/cache/files";
-import { useCategoriesStore } from "@/stores/categories";
-import { applyCategoryColor } from "@/utils/customize";
+import { useFoldersStore } from "@/stores/folders";
+import { applyFolderColor } from "@/utils/customize";
 
 const PdfPage = () => {
-  const { categoryId, fileId } = useParams();
+  const { folderId, fileId } = useParams();
   const [file, setFile] = useState<File | undefined>();
-  const category = useCategoriesStore((s) =>
-    s.categories.find((c) => c.id === categoryId)
+  const folder = useFoldersStore((s) =>
+    s.folders.find((f) => f.id === folderId)
   );
-  const categoryFile = category?.files.find((f) => f.id === fileId);
+  const folderFile = folder?.files.find((f) => f.id === fileId);
 
   useEffect(() => {
     if (fileId)
@@ -28,20 +28,14 @@ const PdfPage = () => {
         }
       });
   }, []);
-  if (!file || !categoryFile || !categoryId || !category)
+  if (!file || !folderFile || !folderId || !folder)
     return (
       <div className="flex flex-col items-center justify-center w-full h-full p-8">
         <Skeleton className="w-full h-full rounded-lg" />
       </div>
     );
-  applyCategoryColor(category);
-  return (
-    <PdfViewer
-      file={file}
-      categoryFile={categoryFile}
-      categoryId={categoryId}
-    />
-  );
+  applyFolderColor(folder);
+  return <PdfViewer file={file} folderFile={folderFile} folderId={folderId} />;
 };
 
 export default PdfPage;

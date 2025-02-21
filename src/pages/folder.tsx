@@ -2,20 +2,22 @@ import { useParams } from "react-router-dom";
 import { ButtonGroup, Button } from "@heroui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
 
-import { useCategoriesStore } from "@/stores/categories";
+import { useFoldersStore } from "@/stores/folders";
 import { PASTEL_COLORS } from "@/constants";
-import CategoryFiles from "@/components/category-files";
-import { applyCategoryColor } from "@/utils/customize";
+import FolderFiles from "@/components/folder-files";
+import { applyFolderColor } from "@/utils/customize";
 
-const Category = () => {
-  const { categoryId } = useParams();
-  const categories = useCategoriesStore((s) => s.categories);
-  const category = categories.find((c) => c.id === categoryId);
-  const addOrSetCategory = useCategoriesStore((s) => s.addOrSetCategory);
+const Folder = ({ externalFolderId }: { externalFolderId?: string }) => {
+  const { folderId } = useParams();
+  const folders = useFoldersStore((s) => s.folders);
+  const folder = folders.find(
+    (f) => f.id === folderId || f.id === externalFolderId
+  );
+  const addOrSetFolder = useFoldersStore((s) => s.addOrSetFolder);
 
-  if (!category) return null;
+  if (!folder) return null;
 
-  applyCategoryColor(category);
+  applyFolderColor(folder);
 
   return (
     <div className="min-h-screen pt-8">
@@ -24,12 +26,17 @@ const Category = () => {
           <Popover placement="bottom">
             <PopoverTrigger>
               <div
-                className="p-2 cursor-pointer rounded-xl"
+                className="p-2 cursor-pointer rounded-xl shadow-large"
                 style={{
-                  backgroundColor: category.color,
+                  backgroundColor: folder.color,
                 }}
               >
-                <div className="size-6 bg-black aspect-square rounded-[50%] shadow-medium" />
+                <div
+                  style={{
+                    backgroundColor: folder.color,
+                  }}
+                  className="size-6 aspect-square saturate-[3] rounded-[50%] shadow-small"
+                />
               </div>
             </PopoverTrigger>
             <PopoverContent
@@ -40,8 +47,8 @@ const Category = () => {
                 <Button
                   key={`hsl(${h}, ${s}%, ${l}%)`}
                   onPress={() => {
-                    addOrSetCategory({
-                      ...category,
+                    addOrSetFolder({
+                      ...folder,
                       color: `hsl(${h}, ${s}%, ${l}%)`,
                     });
                   }}
@@ -57,11 +64,11 @@ const Category = () => {
         <input
           className="w-full mb-6 font-serif text-4xl bg-transparent border-none focus:outline-none"
           placeholder="Name"
-          value={category.name}
+          value={folder.name}
           onChange={(e) => {
             const value = e.currentTarget.value;
 
-            addOrSetCategory({ ...category, name: value });
+            addOrSetFolder({ ...folder, name: value });
           }}
         />
       </div>
@@ -73,19 +80,19 @@ const Category = () => {
             fieldSizing: "content",
           } as any
         }
-        value={category.description}
+        value={folder.description}
         onChange={(e) => {
           const value = e.currentTarget.value;
 
-          addOrSetCategory({ ...category, description: value });
+          addOrSetFolder({ ...folder, description: value });
         }}
       />
       <h2 className="mb-4 text-2xl font-medium text-black/60">
-        Files ({category.files.length})
+        Files ({folder.files.length})
       </h2>
-      <CategoryFiles category={category} />
+      <FolderFiles folder={folder} />
     </div>
   );
 };
 
-export default Category;
+export default Folder;

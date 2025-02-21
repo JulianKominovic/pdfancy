@@ -4,12 +4,12 @@ import {
   stripHslString,
 } from "./color";
 
-import { Category } from "@/stores/categories";
+import { Folder } from "@/stores/folders";
 
-export function applyCategoryColor(category: Category) {
-  if (category.color) {
-    const pallete = colorPalleteFromHslPastelColor(stringToHsl(category.color));
-    document.documentElement.style.setProperty("--bg-color", category.color);
+export function applyFolderColor(folder: Folder) {
+  if (folder.color) {
+    const pallete = colorPalleteFromHslPastelColor(stringToHsl(folder.color));
+    document.documentElement.style.setProperty("--bg-color", folder.color);
 
     document.documentElement.style.setProperty(
       "--heroui-content2",
@@ -22,7 +22,7 @@ export function applyCategoryColor(category: Category) {
 
     document.documentElement.style.setProperty(
       "--heroui-primary",
-      stripHslString(category.color)
+      stripHslString(folder.color)
     );
     document.documentElement.style.setProperty(
       "--heroui-primary-50",
