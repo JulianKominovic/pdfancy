@@ -107,7 +107,7 @@ const PdfHighlights = ({
   if (!pagesLoaded) return null;
   return (
     <>
-      {Object.values(folderFile.highlights).flatMap((highlight) => {
+      {/* {Object.values(folderFile.highlights).flatMap((highlight) => {
         const { start, end } = highlight;
         const startPageElement = document.querySelector(
           `[data-page-number="${start.pageIndex + 1}"] .react-pdf__Page__textContent`
@@ -196,7 +196,7 @@ const PdfHighlights = ({
             />
           );
         });
-      })}
+      })} */}
       {folderId &&
         folderFile.id &&
         selectionRange &&

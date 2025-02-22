@@ -9,7 +9,7 @@ import { Button } from "@heroui/button";
 import { Trash } from "lucide-react";
 import { Card } from "@heroui/card";
 import { List as VList } from "react-virtualized";
-
+import { Virtuoso } from "react-virtuoso";
 import PdfHighlights from "./pdf-highlights";
 
 import { FolderFile, useFoldersStore } from "@/stores/folders";
@@ -110,6 +110,43 @@ const PdfViewer = ({
         loading={<Skeleton className="w-full h-full rounded-lg" />}
       >
         {width && numPages && pagesSizes.length === numPages && (
+          <Virtuoso
+            // itemsRendered={(index) => {
+            //   console.log("[VIRTUOSO]", "Items rendered", index);
+            // }}
+            data={pagesSizes}
+            overscan={3 * pagesSizes[0].height * (width / pagesSizes[0].width)}
+            defaultItemHeight={
+              pagesSizes[0].height * (width / pagesSizes[0].width)
+            }
+            // components={{
+            //   // eslint-disable-next-line react/display-name
+            //   List: ({ children, ...rest }) => (
+            //     <div {...rest} className="relative">
+            //       <PdfHighlights
+            //         folderId={folderId}
+            //         folderFile={folderFile}
+            //         readerRef={readerRef}
+            //         pagesLoaded={
+            //           numPages !== undefined && pagesSizes.length >= numPages
+            //         }
+            //       />
+            //       {children}
+            //     </div>
+            //   ),
+            // }}
+            itemContent={(index, pageSize) => (
+              <PdfPage
+                pageNumber={index + 1}
+                width={width}
+                height={pageSize.height}
+                index={index}
+                folderFile={folderFile}
+              />
+            )}
+          />
+        )}
+        {/* {width && numPages && pagesSizes.length === numPages && (
           // @ts-ignore
           <VList
             ref={vlistRef}
@@ -168,14 +205,7 @@ const PdfViewer = ({
               </div>
             )}
           />
-        )}
-
-        <PdfHighlights
-          folderId={folderId}
-          folderFile={folderFile}
-          readerRef={readerRef}
-          pagesLoaded={numPages !== undefined && pagesSizes.length >= numPages}
-        />
+        )} */}
       </Document>
 
       <div className="flex-shrink-0 h-[calc(100%-32px)] py-4 overflow-visible w-72">
@@ -261,5 +291,131 @@ const PdfViewer = ({
     </div>
   );
 };
+
+function PdfPage({
+  pageNumber,
+  width,
+  height,
+  index,
+  folderFile,
+}: {
+  pageNumber: number;
+  width: number;
+  height: number;
+  index: number;
+  folderFile: FolderFile;
+}) {
+  const [textLayerRendered, setTextLayerRendered] = useState(false);
+  return (
+    <div className="relative" key={`page_${index + 1}`}>
+      <Page
+        onRenderTextLayerSuccess={() => setTextLayerRendered(true)}
+        className={"!bg-transparent"}
+        devicePixelRatio={Math.min(2, window.devicePixelRatio)}
+        width={width}
+        canvasBackground={
+          document.documentElement.style.getPropertyValue("--bg-color") ||
+          "white"
+        }
+        pageNumber={index + 1}
+      />
+      {textLayerRendered &&
+        Object.values(folderFile.highlights)
+          .filter((r) => {
+            const { start, end } = r;
+            return start.pageIndex === index || end.pageIndex === index;
+          })
+          .flatMap((highlight) => {
+            const { start, end } = highlight;
+            const startPageElement = document.querySelector(
+              `[data-page-number="${start.pageIndex + 1}"] .react-pdf__Page__textContent`
+            );
+            const endPageElement = document.querySelector(
+              `[data-page-number="${end.pageIndex + 1}"] .react-pdf__Page__textContent`
+            );
+            console.log("[HIGHLIGHTS]", "Getting page elements", {
+              startPageElement,
+              endPageElement,
+            });
+            if (!startPageElement || !endPageElement) return null;
+            const startNode = startPageElement.childNodes[
+              start.childrenIndex
+            ] as HTMLElement;
+            const endNode = endPageElement.childNodes[
+              end.childrenIndex
+            ] as HTMLElement;
+
+            console.log("[HIGHLIGHTS]", "Getting node children", {
+              startNode,
+              endNode,
+            });
+            if (!startNode || !endNode) return null;
+            const startTextNode =
+              startNode instanceof Text ? startNode : startNode.firstChild;
+            const endTextNode =
+              endNode instanceof Text ? endNode : endNode.firstChild;
+
+            console.log("[HIGHLIGHTS]", "Getting text nodes", {
+              startTextNode,
+              endTextNode,
+            });
+
+            if (!startTextNode || !endTextNode) return null;
+
+            console.log("[HIGHLIGHTS]", "Creating range", {
+              startTextNode,
+              endTextNode,
+              startOffset: start.offset,
+              endOffset: end.offset,
+              startNodeLength: startTextNode.textContent!.length,
+              endNodeLength: endTextNode.textContent!.length,
+            });
+            const range = document.createRange();
+            range.setStart(startTextNode, start.offset);
+            if (range.comparePoint(endTextNode, end.offset) === 1) {
+              range.setEnd(endTextNode, end.offset);
+            } else {
+              range.setStart(endTextNode, end.offset);
+              range.setEnd(startTextNode, start.offset);
+            }
+            const rects = range.getClientRects();
+
+            if (rects.length === 0) return null;
+
+            // Rects which are over the same element should be deduped
+            let alreadySeen = new Set<Node>();
+            const dedupedRects = Array.from(rects).filter((r) => {
+              const element = document.elementFromPoint(r.left, r.top);
+              if (element && !alreadySeen.has(element)) {
+                alreadySeen.add(element);
+                return true;
+              }
+              return false;
+            });
+            return dedupedRects.map((rect, i) => {
+              return (
+                <button
+                  key={highlight.id + "s" + i}
+                  className="absolute z-10 rounded-lg pointer-events-none"
+                  style={{
+                    width: rect.width,
+                    height: rect.height,
+                    top:
+                      rect.top +
+                      document.querySelector(".react-pdf__Document")!.scrollTop,
+                    left:
+                      rect.left -
+                      document
+                        .querySelector(".react-pdf__Document")!
+                        .getBoundingClientRect().x,
+                    backgroundColor: "rgba(255, 0, 255, 0.327)",
+                  }}
+                />
+              );
+            });
+          })}
+    </div>
+  );
+}
 
 export default PdfViewer;
