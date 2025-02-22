@@ -115,6 +115,10 @@ const PdfHighlights = ({
         const endPageElement = document.querySelector(
           `[data-page-number="${end.pageIndex + 1}"] .react-pdf__Page__textContent`
         );
+        console.log("[HIGHLIGHTS]", "Getting page elements", {
+          startPageElement,
+          endPageElement,
+        });
         if (!startPageElement || !endPageElement) return null;
         const startNode = startPageElement.childNodes[
           start.childrenIndex
@@ -123,25 +127,58 @@ const PdfHighlights = ({
           end.childrenIndex
         ] as HTMLElement;
 
+        console.log("[HIGHLIGHTS]", "Getting node children", {
+          startNode,
+          endNode,
+        });
         if (!startNode || !endNode) return null;
         const startTextNode =
           startNode instanceof Text ? startNode : startNode.firstChild;
         const endTextNode =
           endNode instanceof Text ? endNode : endNode.firstChild;
 
+        console.log("[HIGHLIGHTS]", "Getting text nodes", {
+          startTextNode,
+          endTextNode,
+        });
+
         if (!startTextNode || !endTextNode) return null;
+
+        console.log("[HIGHLIGHTS]", "Creating range", {
+          startTextNode,
+          endTextNode,
+          startOffset: start.offset,
+          endOffset: end.offset,
+          startNodeLength: startTextNode.textContent!.length,
+          endNodeLength: endTextNode.textContent!.length,
+        });
         const range = document.createRange();
         range.setStart(startTextNode, start.offset);
-        range.setEnd(endTextNode, end.offset);
+        if (range.comparePoint(endTextNode, end.offset) === 1) {
+          range.setEnd(endTextNode, end.offset);
+        } else {
+          range.setStart(endTextNode, end.offset);
+          range.setEnd(startTextNode, start.offset);
+        }
         const rects = range.getClientRects();
 
         if (rects.length === 0) return null;
 
-        return Array.from(rects).map((rect, i) => {
+        // Rects which are over the same element should be deduped
+        let alreadySeen = new Set<Node>();
+        const dedupedRects = Array.from(rects).filter((r) => {
+          const element = document.elementFromPoint(r.left, r.top);
+          if (element && !alreadySeen.has(element)) {
+            alreadySeen.add(element);
+            return true;
+          }
+          return false;
+        });
+        return dedupedRects.map((rect, i) => {
           return (
             <button
               key={highlight.id + "s" + i}
-              className="absolute z-10 pointer-events-none"
+              className="absolute z-10 rounded-lg pointer-events-none"
               style={{
                 width: rect.width,
                 height: rect.height,
@@ -150,7 +187,9 @@ const PdfHighlights = ({
                   document.querySelector(".react-pdf__Document")!.scrollTop,
                 left:
                   rect.left -
-                  readerRef.current!.getBoundingClientRect().x +
+                  document
+                    .querySelector(".react-pdf__Document")!
+                    .getBoundingClientRect().x +
                   readerRef.current!.scrollLeft,
                 backgroundColor: "rgba(255, 0, 255, 0.327)",
               }}

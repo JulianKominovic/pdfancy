@@ -1,34 +1,20 @@
-// // @ts-nocheck
-
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { memo, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Document, Outline, Page } from "react-pdf";
 import { PDFDocumentProxy } from "pdfjs-dist";
 import { Skeleton } from "@heroui/skeleton";
-import { List as VList } from "react-virtualized";
 import { Tabs, Tab } from "@heroui/tabs";
-import { Tooltip } from "@heroui/tooltip";
-import { Button, ButtonGroup } from "@heroui/button";
-import { Copy, Trash } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Button } from "@heroui/button";
+import { Trash } from "lucide-react";
 import { Card } from "@heroui/card";
+import { List as VList } from "react-virtualized";
 
-import {
-  CategoryFileHighlight,
-  FolderFile,
-  useFoldersStore,
-} from "@/stores/folders";
-import loggers from "@/utils/loggers";
-import { useDebounceFunction } from "@/hooks/use-debounce-fn";
-import {
-  getCssSelectorForTextNode,
-  getElementFromCssSelectorAndChildrenIndex,
-  recursiveFindChildrenIndex,
-  recursiveFindNodeByCondition,
-} from "@/utils/dom";
-import { Popover, PopoverContent, PopoverTrigger } from "@heroui/popover";
 import PdfHighlights from "./pdf-highlights";
+
+import { FolderFile, useFoldersStore } from "@/stores/folders";
+import { useDebounceFunction } from "@/hooks/use-debounce-fn";
+import { Textarea } from "@heroui/input";
 
 const PdfViewer = ({
   file,
@@ -46,86 +32,29 @@ const PdfViewer = ({
     }[]
   >([]);
   const pagesLoaded = useRef(0);
-  const [loadedCompletely, setLoadedCompletely] = useState(false);
   const [scrollRestored, setScrollRestored] = useState(false);
   const [scale, _setScale] = useState(1);
   const updateFile = useFoldersStore((s) => s.updateFile);
-  const addOrSetHighlight = useFoldersStore((s) => s.addOrSetHighlight);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>();
   const readerRef = useRef<HTMLDivElement>(null);
-
-  // const [highlights, setHighlights] = useState<
-  //   {
-  //     startNode: Node;
-  //     endNode: Node;
-  //     startOffset: number;
-  //     endOffset: number;
-  //     clientRects: DOMRect[];
-  //   }[]
-  // >([]);
   const numPages = doc?.numPages;
 
   const [width, setWidth] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  // const vlistRef = useRef<VList | null>(null);
+  const vlistRef = useRef<VList | null>(null);
   const { debounce } = useDebounceFunction(100);
   const { debounce: updateFileDebounced } = useDebounceFunction(300);
   const deleteHighlight = useFoldersStore((s) => s.deleteHighlight);
 
   function onItemClick({ pageNumber }: { pageNumber: number }) {
-    // if (vlistRef.current) {
-    //   vlistRef.current?.scrollToRow(pageNumber - 1);
-    // }
+    if (vlistRef.current) {
+      vlistRef.current?.scrollToRow(pageNumber - 1);
+    }
     document.querySelector(`#p${pageNumber}`)?.scrollIntoView({
       behavior: "instant",
       block: "center",
     });
-    // updateExistingHighlights();
   }
-
-  // function updateExistingHighlights() {
-  //   setHighlights(
-  //     Object.values(folderFile.highlights)
-  //       .map((h) => {
-  //         const startNode = getElementFromCssSelectorAndChildrenIndex(
-  //           h.start.selector,
-  //           h.start.childrenIndex
-  //         );
-  //         const endNode = getElementFromCssSelectorAndChildrenIndex(
-  //           h.end.selector,
-  //           h.end.childrenIndex
-  //         );
-
-  //         if (!startNode || !endNode) return null;
-  //         const range = document.createRange();
-  //         try {
-  //           range.setStart(startNode, h.start.offset);
-  //           range.setEnd(endNode, h.end.offset);
-  //         } catch (err) {
-  //           console.log("Error updating highlight " + h.id, err, {
-  //             startNode,
-  //             endNode,
-  //             startOffset: h.start.offset,
-  //             endOffset: h.end.offset,
-  //           });
-  //         }
-  //         if (!startNode || !endNode) return null;
-  //         const rects = range.getClientRects();
-  //         if (rects.length > 0) {
-  //           return {
-  //             ...h,
-  //             clientRects: Array.from(rects),
-  //             startNode,
-  //             endNode,
-  //             startOffset: h.start.offset,
-  //             endOffset: h.end.offset,
-  //           };
-  //         }
-  //         return null;
-  //       })
-  //       .filter((h) => h !== null)
-  //   );
-  // }
 
   useEffect(() => {
     // Put a resize observer on the wrapper to get the width of the document
@@ -133,10 +62,11 @@ const PdfViewer = ({
       for (const entry of entries) {
         const { width } = entry.contentRect;
         debounce(() => {
+          pagesLoaded.current = 0;
           setWidth(width);
-          // if (vlistRef.current) {
-          //   vlistRef.current?.recomputeRowHeights();
-          // }
+          if (vlistRef.current) {
+            vlistRef.current?.recomputeRowHeights();
+          }
         });
       }
     });
@@ -150,7 +80,7 @@ const PdfViewer = ({
       resizeObserver.disconnect();
     };
   }, []);
-  console.log("loadedCompletely", loadedCompletely);
+
   return (
     <div
       className="relative flex justify-between h-full gap-8 overflow-hidden"
@@ -179,203 +109,74 @@ const PdfViewer = ({
         }}
         loading={<Skeleton className="w-full h-full rounded-lg" />}
       >
+        {width && numPages && pagesSizes.length === numPages && (
+          // @ts-ignore
+          <VList
+            ref={vlistRef}
+            scrollTop={
+              scrollRestored ? undefined : folderFile?.scrollPosition || 0
+            }
+            width={width}
+            height={wrapperRef.current?.clientHeight || 0}
+            rowCount={numPages}
+            onRowsRendered={() => {
+              if (scrollRestored) return;
+              setScrollRestored(true);
+            }}
+            onScroll={({ scrollTop }) => {
+              if (folderFile && scrollRestored) {
+                updateFileDebounced(() => {
+                  const bounds: DOMRect =
+                    wrapperRef.current?.getBoundingClientRect()!;
+                  const pageElements = document.elementsFromPoint(
+                    bounds.x + bounds.width / 2,
+                    bounds.y + bounds.height / 2
+                  );
+                  const pageNumber = pageElements
+                    .find((el) => el.hasAttribute("data-page-number"))
+                    ?.getAttribute("data-page-number");
+                  updateFile(
+                    {
+                      ...folderFile,
+                      scrollPosition: scrollTop,
+                      readPages: Number(pageNumber),
+                    },
+                    folderId
+                  );
+                });
+              }
+            }}
+            rowHeight={({ index }) =>
+              pagesSizes[index].height * (width / pagesSizes[index].width)
+            }
+            estimatedRowSize={
+              pagesSizes[0].height * (width / pagesSizes[0].width)
+            }
+            rowRenderer={({ index, style }) => (
+              <div style={style} key={`page_${index + 1}`}>
+                <Page
+                  className={"!bg-transparent"}
+                  devicePixelRatio={Math.min(2, window.devicePixelRatio)}
+                  width={width}
+                  canvasBackground={
+                    document.documentElement.style.getPropertyValue(
+                      "--bg-color"
+                    ) || "white"
+                  }
+                  pageNumber={index + 1}
+                />
+              </div>
+            )}
+          />
+        )}
+
         <PdfHighlights
           folderId={folderId}
           folderFile={folderFile}
           readerRef={readerRef}
-          pagesLoaded={loadedCompletely}
+          pagesLoaded={numPages !== undefined && pagesSizes.length >= numPages}
         />
-        {
-          numPages &&
-            width &&
-            pagesSizes.length === numPages &&
-            Array.from({ length: numPages }).map((_, index) => (
-              <MemoizedPage
-                onRenderTextLayerSuccess={() => {
-                  pagesLoaded.current++;
-                  console.log("Loaded page", pagesLoaded.current);
-                  setLoadedCompletely(pagesLoaded.current >= numPages);
-                }}
-                key={`page-${index + 1}`}
-                index={index}
-                width={width}
-              />
-            ))
-          //  (
-          // @ts-ignore
-          // <VList
-          //   ref={vlistRef}
-          //   scrollTop={
-          //     scrollRestored ? undefined : folderFile?.scrollPosition || 0
-          //   }
-          //   width={width}
-          //   height={wrapperRef.current?.clientHeight || 0}
-          //   rowCount={numPages}
-          //   onRowsRendered={() => {
-          //     if (scrollRestored) return;
-          //     setScrollRestored(true);
-          //   }}
-          //   onScroll={({ scrollTop }) => {
-          //     // updateExistingHighlights();
-
-          //     // Update selection highlight positions
-          //     if (selectionRange) {
-          //       const clientRects = document.createRange();
-          //       clientRects.setStart(
-          //         selectionRange.startNode,
-          //         selectionRange.startOffset
-          //       );
-          //       clientRects.setEnd(
-          //         selectionRange.endNode,
-          //         selectionRange.endOffset
-          //       );
-          //       const rects = clientRects.getClientRects();
-
-          //       if (rects.length > 0) {
-          //         setSelectionRange({
-          //           ...selectionRange,
-          //           clientRects: Array.from(rects),
-          //         });
-          //       }
-          //     }
-
-          //     if (folderFile && scrollRestored) {
-          //       updateFileDebounced(() => {
-          //         const bounds: DOMRect =
-          //           wrapperRef.current?.getBoundingClientRect()!;
-          //         const pageElements = document.elementsFromPoint(
-          //           bounds.x + bounds.width / 2,
-          //           bounds.y + bounds.height / 2
-          //         );
-          //         const pageNumber = pageElements
-          //           .find((el) => el.hasAttribute("data-page-number"))
-          //           ?.getAttribute("data-page-number");
-          //         updateFile(
-          //           {
-          //             ...folderFile,
-          //             scrollPosition: scrollTop,
-          //             readPages: Number(pageNumber),
-          //           },
-          //           folderId
-          //         );
-          //       });
-          //     }
-          //   }}
-          //   rowHeight={({ index }) =>
-          //     pagesSizes[index].height * (width / pagesSizes[index].width)
-          //   }
-          //   rowRenderer={({ index, style }) => (
-          //     <div
-          //       className="relative"
-          //       style={{ width: width }}
-          //       key={`page_${index + 1}`}
-          //     >
-          //       <Page
-          //         className={"!bg-transparent relative"}
-          //         devicePixelRatio={Math.min(2, window.devicePixelRatio)}
-          //         width={width}
-          //         canvasBackground={
-          //           document.documentElement.style.getPropertyValue(
-          //             "--bg-color"
-          //           ) || "white"
-          //         }
-          //         inputRef={(e) => {
-          //           if (e) {
-          //             e.style.setProperty("width", `${width}px`);
-          //             e.style.setProperty("position", "absolute");
-          //             e.style.setProperty("top", style.top + "px");
-          //             e.style.setProperty("left", style.left + "px");
-          //             e.id = `p${index + 1}`;
-          //           }
-          //         }}
-          //         pageNumber={index + 1}
-          //       />
-          //       {folderId &&
-          //         folderFile.id &&
-          //         Object.values(folderFile.highlights)
-          //           .filter(
-          //             (h) =>
-          //               h.start.pageIndex === index || h.end.pageIndex === index
-          //           )
-          //           .flatMap((h, i) => {
-          //             const startingPageNode = document.querySelector(
-          //               `#p${h.start.pageIndex} .react-pdf__Page__textContent`
-          //             );
-          //             const endingPageNode = document.querySelector(
-          //               `#p${h.end.pageIndex} .react-pdf__Page__textContent`
-          //             );
-
-          //             const startNode = startingPageNode?.childNodes[
-          //               h.start.childrenIndex
-          //             ] as HTMLElement | null;
-          //             const endNode = endingPageNode?.childNodes[
-          //               h.end.childrenIndex
-          //             ] as HTMLElement | null;
-          //             if (!startNode || !endNode) return null;
-          //             const range = document.createRange();
-          //             try {
-          //               range.setStart(startNode, h.start.offset);
-          //               range.setEnd(endNode, h.end.offset);
-          //             } catch (err) {
-          //               return null;
-          //             }
-          //             const rects = range.getClientRects();
-          //             return Array.from(rects).map((rect, index) => {
-          //               return (
-          //                 <NavLink
-          //                   key={`highlight-${h.id}-${index}`}
-          //                   to={`/folder/${folderId}/file/${folderFile.id}?highlight=${h.id}`}
-          //                   className="absolute"
-          //                   style={{
-          //                     width: rect.width,
-          //                     height: rect.height,
-          //                     top: rect.top,
-          //                     left: rect.left,
-          //                     backgroundColor: "rgba(255, 0, 255, 0.327)",
-          //                   }}
-          //                 />
-          //               );
-          //             });
-          //           })}
-          //     </div>
-          //   )}
-          // />
-
-          // )
-        }
       </Document>
-
-      {/* {folderId &&
-        folderFile.id &&
-        highlights.flatMap((h, index) => {
-          const startNode = h.startNode;
-          const endNode = h.endNode;
-          const range = document.createRange();
-          try {
-            range.setStart(startNode, h.startOffset);
-            range.setEnd(endNode, h.endOffset);
-          } catch (err) {
-            return null;
-          }
-          const hid = Object.values(folderFile.highlights)[index].id;
-          const rects = range.getClientRects();
-          return Array.from(rects).map((rect, index) => {
-            return (
-              <NavLink
-                key={`highlight-${hid}-${index}`}
-                to={`/folder/${folderId}/file/${folderFile.id}?highlight=${hid}`}
-                className="fixed inset-0"
-                style={{
-                  width: rect.width,
-                  height: rect.height,
-                  top: rect.top,
-                  left: rect.left,
-                  backgroundColor: "rgba(255, 0, 255, 0.327)",
-                }}
-              />
-            );
-          });
-        })} */}
 
       <div className="flex-shrink-0 h-[calc(100%-32px)] py-4 overflow-visible w-72">
         <Tabs
@@ -426,8 +227,30 @@ const PdfViewer = ({
                     as={Button}
                     className="items-start w-full min-w-0 py-2"
                   >
-                    <p>{highlight.text}</p>
+                    <blockquote className="text-sm text-left whitespace-normal">
+                      {highlight.text}
+                    </blockquote>
                   </Card>
+                  <form className="px-2 pt-2 pb-2 mx-2 text-xs rounded-b-lg bg-white/60 h-fit">
+                    <Textarea
+                      rows={1}
+                      classNames={{
+                        inputWrapper:
+                          "bg-transparent shadow-none min-h-0 data-[hover]:bg-content2 data-[focus]:bg-content2 group-data-[focus]:bg-content2",
+                      }}
+                      minRows={1}
+                      className="max-w-xs mb-1 border-none mx-uto"
+                      placeholder="Start typing..."
+                      variant="flat"
+                    />
+                    <Button
+                      variant="shadow"
+                      className="text-black bg-content2"
+                      color="primary"
+                    >
+                      Save
+                    </Button>
+                  </form>
                 </div>
               ))}
             </div>
@@ -438,41 +261,5 @@ const PdfViewer = ({
     </div>
   );
 };
-
-const MemoizedPage = memo(
-  ({
-    width,
-    index,
-    onRenderTextLayerSuccess,
-  }: {
-    width: number;
-    index: number;
-    onRenderTextLayerSuccess: () => void;
-  }) => {
-    return (
-      <Page
-        onRenderTextLayerSuccess={onRenderTextLayerSuccess}
-        key={`page-${index + 1}`}
-        className={"!bg-transparent relative"}
-        devicePixelRatio={Math.min(2, window.devicePixelRatio)}
-        width={width}
-        canvasBackground={
-          document.documentElement.style.getPropertyValue("--bg-color") ||
-          "white"
-        }
-        inputRef={(e) => {
-          if (e) {
-            e.id = `p${index + 1}`;
-          }
-        }}
-        pageNumber={index + 1}
-      />
-    );
-  },
-  (prevProps, nextProps) => {
-    return prevProps.index === nextProps.index;
-  }
-);
-MemoizedPage.displayName = "MemoizedPage";
 
 export default PdfViewer;
