@@ -1,14 +1,16 @@
-import FolderFiles from "@/components/folder-files";
-import { PASTEL_COLORS } from "@/constants";
-import { useFoldersStore } from "@/stores/folders";
 import { ButtonGroup, Button } from "@heroui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
-import Folder from "./folder";
 import { useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { Divider } from "@heroui/divider";
+
+import { useFoldersStore } from "@/stores/folders";
+import { PASTEL_COLORS } from "@/constants";
+import FolderFiles from "@/components/folder-files";
+
 export default function IndexPage() {
-  const folders = useFoldersStore((s) => s.folders);
+  const _folders = useFoldersStore((s) => s.folders);
+  const folders = Object.values(_folders);
   const addOrSetFolder = useFoldersStore((s) => s.addOrSetFolder);
   const navigate = useNavigate();
   const color = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
@@ -26,7 +28,7 @@ export default function IndexPage() {
               name: "New folder",
               color: `hsl(${color.h}, ${color.s}%, ${color.l}%)`,
               description: "Add a description here",
-              files: [],
+              files: {},
             });
             navigate(`/folder/${folder.id}`);
           }}

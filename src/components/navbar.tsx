@@ -12,7 +12,8 @@ import { useFoldersStore } from "@/stores/folders";
 export const Navbar = () => {
   const classNameFn = ({ isActive }: any) =>
     clsx(isActive ? "opacity-100" : "opacity-50", "flex items-center gap-1");
-  const folders = useFoldersStore((s) => s.folders);
+  const _folders = useFoldersStore((s) => s.folders);
+  const folders = Object.values(_folders);
   const addOrSetFolder = useFoldersStore((s) => s.addOrSetFolder);
   const destroy = useFoldersStore((s) => s.destroy);
   const color = PASTEL_COLORS[Math.floor(Math.random() * PASTEL_COLORS.length)];
@@ -38,7 +39,7 @@ export const Navbar = () => {
                 />
                 {folder.name || "No name"}{" "}
                 <Chip color="primary" variant="flat" size="sm">
-                  {folder.files.length}
+                  {Object.keys(folder.files).length}
                 </Chip>
               </RouterLink>
             </li>
@@ -54,7 +55,7 @@ export const Navbar = () => {
                 name: "New folder",
                 color: `hsl(${color.h}, ${color.s}%, ${color.l}%)`,
                 description: "Add a description here",
-                files: [],
+                files: {},
               });
               navigate(`/folder/${folder.id}`);
             }}

@@ -35,7 +35,7 @@ const FolderFiles = ({ folder }: { folder: Folder }) => {
           scrollPosition: 0,
           readPages: 0,
           pages: pages,
-          highlights: [],
+          highlights: {},
         },
         folder.id
       );
@@ -43,7 +43,7 @@ const FolderFiles = ({ folder }: { folder: Folder }) => {
   }
   return (
     <section className="flex flex-wrap gap-4 overflow-visible">
-      {folder.files.map((file) => (
+      {Object.values(folder.files).map((file) => (
         <Card
           isFooterBlurred
           as={Link}

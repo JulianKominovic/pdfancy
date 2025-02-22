@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
 import vFilesCache from "@/storage/cache/files";
-
+import loggers from "@/utils/loggers";
+import deepmerge from "deepmerge";
 const foldersDb = new Promise<IDBDatabase>((resolve, reject) => {
   const openRequest = indexedDB.open("folders", 1);
 
@@ -12,7 +13,7 @@ const foldersDb = new Promise<IDBDatabase>((resolve, reject) => {
     switch (event.oldVersion) {
       // Client don't have db installed
       case 0:
-        db.createObjectStore("folders", { keyPath: "id" });
+        db.createObjectStore("folders");
         break;
       case 1:
         break;
@@ -29,29 +30,34 @@ const foldersDb = new Promise<IDBDatabase>((resolve, reject) => {
     reject(event);
   };
 });
+
 export type CategoryFileHighlight = {
+  id?: string;
   start: {
-    selector: string;
+    pageIndex: number;
+    childrenIndex: number;
     offset: number;
   };
   end: {
-    selector: string;
+    pageIndex: number;
+    childrenIndex: number;
     offset: number;
   };
+  text: string;
   reflections: any[];
   color: string;
 };
 
 // Custom storage object
 export type FolderFile = {
-  id: string;
+  id?: string;
   name: string;
   date?: string;
   creator?: string;
   scrollPosition?: number;
   readPages: number;
   pages: number;
-  highlights: CategoryFileHighlight[];
+  highlights: Record<string, CategoryFileHighlight>;
 };
 
 export type Folder = {
@@ -59,12 +65,11 @@ export type Folder = {
   name: string;
   description: string;
   color: string;
-  files: FolderFile[];
+  files: Record<string, FolderFile>;
 };
 
 type FoldersStore = {
-  folders: Folder[];
-  setFolders: (folders: Folder[]) => void;
+  folders: Record<string, Folder>;
   attachFile: (
     file: File,
     folderFile: Omit<FolderFile, "id"> & { id?: string },
@@ -72,75 +77,110 @@ type FoldersStore = {
   ) => Promise<void>;
   updateFile: (folderFile: Partial<FolderFile>, folderId: string) => void;
   addOrSetFolder: (folder: Omit<Folder, "id"> & { id?: string }) => Folder;
+  addOrSetHighlight: (
+    folderId: string,
+    fileId: string,
+    highlight: CategoryFileHighlight
+  ) => void;
+  deleteHighlight: (
+    folderId: string,
+    fileId: string,
+    highlightId: string
+  ) => void;
   destroy: () => void;
 };
 
 export const useFoldersStore = create(
   subscribeWithSelector<FoldersStore>((set, get) => ({
-    folders: [],
-    addOrSetFolder: (folder) => {
-      if (folder.id) {
-        set({
-          folders: get().folders.map((f) =>
-            f.id === folder.id
-              ? {
-                  ...f,
-                  ...folder,
-                  files: [
-                    ...new Set([...(f.files || []), ...(folder.files || [])]),
-                  ],
-                }
-              : f
-          ),
-        });
-      } else {
-        const uuid = crypto.randomUUID();
-        const newFolder = { ...folder, id: uuid } as Folder;
-        set({
-          folders: [...get().folders, newFolder],
-        });
-        return newFolder;
+    folders: {},
+    deleteHighlight(folderId, fileId, highlightId) {
+      const old = get().folders[folderId].files[fileId].highlights;
+      delete old[highlightId];
+      set(
+        deepmerge(get(), {
+          folders: {
+            [folderId]: {
+              files: {
+                [fileId]: {
+                  highlights: old,
+                },
+              },
+            },
+          },
+        })
+      );
+    },
+    addOrSetHighlight(folderId, fileId, highlight) {
+      let id = highlight.id;
+      if (!highlight.id) {
+        id = crypto.randomUUID();
       }
-      return folder as Folder;
+      const newHighlight = { ...highlight, id };
+      set(
+        deepmerge(get(), {
+          folders: {
+            [folderId]: {
+              files: {
+                [fileId]: {
+                  highlights: {
+                    [id as string]: newHighlight,
+                  },
+                },
+              },
+            },
+          },
+        })
+      );
+    },
+    addOrSetFolder: (folder) => {
+      let id = folder.id;
+      if (!folder.id) {
+        id = crypto.randomUUID();
+      }
+      const newFolder = { ...folder, id } as Folder;
+      set(
+        deepmerge(get(), {
+          folders: {
+            [id as string]: newFolder,
+          },
+        })
+      );
+      return newFolder as Folder;
     },
     destroy() {
       foldersDb.then((db) => {
         const transaction = db.transaction("folders", "readwrite");
         transaction.objectStore("folders").clear();
-      });
-      set({
-        folders: [],
+        set({ folders: {} });
       });
     },
-    setFolders: (folders: Folder[]) => set({ folders }),
     async attachFile(file, folderFile, folderId) {
-      const id = crypto.randomUUID();
+      const id = crypto.randomUUID() as string;
       await vFilesCache.addFile(file, id);
-      set({
-        folders: get().folders.map((f) =>
-          f.id === folderId
-            ? {
-                ...f,
-                files: (f.files || []).concat({
-                  ...folderFile,
-                  id,
-                }),
-              }
-            : f
-        ),
-      });
+      set(
+        deepmerge(get(), {
+          folders: {
+            [folderId]: {
+              files: {
+                [id]: { ...folderFile, id },
+              },
+            },
+          } as Record<string, Folder>,
+        })
+      );
     },
     updateFile(folderFile, folderId) {
-      set({
-        folders: get().folders.map((f) =>
-          f.id === folderId
-            ? {
-                ...f,
-                files: [folderFile as any],
-              }
-            : f
-        ),
-      });
+      set(
+        deepmerge(get(), {
+          folders: {
+            [folderId]: {
+              files: {
+                [folderFile.id as string]: folderFile as FolderFile,
+              },
+            },
+          } as Record<string, Folder>,
+        })
+      );
     },
   }))
 );
@@ -148,17 +188,21 @@ foldersDb.then((db) => {
   const transaction = db.transaction("folders", "readonly");
   const request = transaction.objectStore("folders").getAll();
   request.onsuccess = () => {
-    useFoldersStore.setState({ folders: request.result });
+    loggers.layers.storage("Retrieved folders", request.result);
+    useFoldersStore.setState({
+      folders: Object.fromEntries(request.result.map((v) => [v.id, v])),
+    });
   };
 });
 
 useFoldersStore.subscribe(
   (state) => state.folders,
   (folders) => {
+    loggers.layers.storage("Saving folders", folders);
     foldersDb.then((db) => {
       const transaction = db.transaction("folders", "readwrite");
-      for (const folder of folders) {
-        transaction.objectStore("folders").put(folder);
+      for (const [id, folder] of Object.entries(folders)) {
+        transaction.objectStore("folders").put(folder, id);
       }
     });
   }

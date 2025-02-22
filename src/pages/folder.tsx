@@ -9,7 +9,8 @@ import { applyFolderColor } from "@/utils/customize";
 
 const Folder = ({ externalFolderId }: { externalFolderId?: string }) => {
   const { folderId } = useParams();
-  const folders = useFoldersStore((s) => s.folders);
+  const _folders = useFoldersStore((s) => s.folders);
+  const folders = Object.values(_folders);
   const folder = folders.find(
     (f) => f.id === folderId || f.id === externalFolderId
   );
@@ -88,7 +89,7 @@ const Folder = ({ externalFolderId }: { externalFolderId?: string }) => {
         }}
       />
       <h2 className="mb-4 text-2xl font-medium text-black/60">
-        Files ({folder.files.length})
+        Files ({Object.keys(folder.files).length})
       </h2>
       <FolderFiles folder={folder} />
     </div>

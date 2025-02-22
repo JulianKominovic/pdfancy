@@ -1,325 +1,34 @@
 // // @ts-nocheck
-// import "react-pdf/dist/Page/AnnotationLayer.css";
-// import "react-pdf/dist/Page/TextLayer.css";
-
-// import { Button } from "@heroui/button";
-// import { Minus, Plus } from "lucide-react";
-// import { getDocument, PDFDocumentProxy } from "pdfjs-dist";
-// import { useState, useEffect, useRef } from "react";
-// import { Outline } from "react-pdf";
-// import { List as VList, AutoSizer, List } from "react-virtualized";
-
-// const MaxPdfWidth = 672;
-
-// function debounce(func: any, wait?: any, immediate?: any) {
-//   let timeout: any;
-//   return function () {
-//     let context = this,
-//       args = arguments;
-//     let later = function () {
-//       timeout = null;
-//       if (!immediate) func.apply(context, args);
-//     };
-//     let callNow = immediate && !timeout;
-//     clearTimeout(timeout);
-//     timeout = setTimeout(later, wait);
-//     if (callNow) func.apply(context, args);
-//   };
-// }
-
-// function getViewportWidth() {
-//   if (typeof document === "undefined") {
-//     return 0; // TODO server-render default？
-//   }
-//   const viewportWidth = Math.max(
-//     document.documentElement.clientWidth,
-//     window.innerWidth || 0
-//   );
-//   return viewportWidth;
-// }
-
-// export default function PdfViewer({ file }: { file: File }) {
-//   const listStartIndex = useRef(0);
-//   const lastPageWidth = useRef(0);
-//   const pageRenderingQueue = useRef([]);
-//   const listScrollTop = useRef(0);
-
-//   const [vListRef, setVListRef] = useState<List | null>(null);
-//   const [numPages, setNumPages] = useState<{ width: number; height: number }[]>(
-//     []
-//   );
-//   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
-//   const [heightDelta, setHeightDelta] = useState(0);
-//   console.log(
-//     pdf?.getMetadata().then((res) => {
-//       console.log(res);
-
-//       console.log(res.metadata.getAll());
-//     })
-//   );
-//   const screenWidth = getViewportWidth();
-
-//   const [itemWidth, setItemWidth] = useState(() =>
-//     Math.min(screenWidth, MaxPdfWidth)
-//   );
-
-//   const isLargeScreen = screenWidth > MaxPdfWidth;
-
-//   useEffect(() => {
-//     const getPageInfo = async (curPdf: PDFDocumentProxy) => {
-//       const page = await curPdf.getPage(1);
-//       const viewport = page.getViewport({ scale: 1 });
-//       const { width, height } = viewport;
-//       const array: { width: number; height: number }[] = [];
-//       for (let index = 0; index < curPdf.numPages; index++) {
-//         array.push({ width, height });
-//       }
-//       setNumPages(array);
-//     };
-
-//     const fetchPdf = async () => {
-//       const loadingTask = getDocument(await file.arrayBuffer());
-//       const curPdf = await loadingTask.promise;
-//       await setPdf(curPdf);
-//       getPageInfo(curPdf);
-//     };
-
-//     fetchPdf();
-//   }, []);
-
-//   useEffect(() => {
-//     recomputeListSize();
-//     const newScrollTop =
-//       listScrollTop.current + listStartIndex.current * heightDelta;
-//     scrollToPosition(newScrollTop);
-//   }, [itemWidth]);
-
-//   const scrollToPosition = (scrollTop: number) => {
-//     if (vListRef && typeof (vListRef.scrollToPosition === "function")) {
-//       vListRef.scrollToPosition(scrollTop);
-//     }
-//   };
-
-//   const scrollToRow = (index: number) => {
-//     if (vListRef && typeof (vListRef.scrollToRow === "function")) {
-//       vListRef.scrollToRow(index);
-//     }
-//   };
-
-//   const getPageRatio = () => {
-//     const { width: pageWidth, height: pageHeight } = numPages[0] || {};
-//     if (pageHeight === undefined) {
-//       return 1;
-//     }
-//     return pageHeight === 0 ? 1 : pageWidth / pageHeight;
-//   };
-
-//   //recompute list grid size
-//   const recomputeListSize = () => {
-//     if (vListRef && typeof vListRef.recomputeGridSize === "function") {
-//       vListRef.recomputeGridSize();
-//     }
-//   };
-
-//   const getItemHeight = (index: number, height: number) => height;
-
-//   // const renderItem = ({
-//   //   key,
-//   //   index,
-//   //   style,
-//   //   itemWidth,
-//   // }: {
-//   //   key: string;
-//   //   index: number;
-//   //   style: React.CSSProperties;
-//   //   itemWidth: number;
-//   // }) => {
-//   //   const space = 8;
-//   //   return (
-//   //     <div
-//   //       key={key}
-//   //       style={{
-//   //         ...style,
-//   //         textAlign: "center",
-//   //         display: "flex",
-//   //         justifyContent: "center",
-//   //         paddingBottom: space,
-//   //       }}
-//   //     >
-//   //       <canvas
-//   //         style={{
-//   //           width: itemWidth,
-//   //           height: style.height - space,
-//   //           boxShadow: "0 0 5px 2px #ccc",
-//   //           backgroundColor: "#fff",
-//   //         }}
-//   //         data-page-number={`${index + 1}`}
-//   //       />
-//   //     </div>
-//   //   );
-//   // };
-
-//   const renderPdf = async (pageNum: number, curPdf: PDFDocumentProxy) => {
-//     const page = await curPdf.getPage(pageNum);
-
-//     if (pageRenderingQueue.current.some((p) => p === pageNum)) {
-//       return;
-//     }
-//     // Prepare canvas using PDF page dimensions
-//     pageRenderingQueue.current = [...pageRenderingQueue.current, pageNum];
-//     const canvas = document.querySelector(
-//       `canvas[data-page-number='${pageNum}']`
-//     );
-//     const context = canvas?.getContext("2d");
-
-//     const viewport = page.getViewport({
-//       scale: isLargeScreen ? 3 : window.devicePixelRatio,
-//     });
-//     const { width, height } = viewport;
-//     if (canvas) {
-//       canvas.width = width;
-//       canvas.height = height;
-//     }
-
-//     // Render PDF page into canvas context
-//     const renderContext = {
-//       canvasContext: context,
-//       viewport: viewport,
-//     };
-//     const renderTask = page.render(renderContext);
-//     renderTask.promise.then(() => {
-//       pageRenderingQueue.current = pageRenderingQueue.current.filter(
-//         (p) => p !== pageNum
-//       );
-//     });
-//   };
-
-//   return (
-//     <div className="flex w-full h-full gap-4">
-//       <div className={"pdfReader-container h-full w-full overflow-hidden"}>
-//         <div className="flex justify-center h-full">
-//           <AutoSizer
-//             onResize={debounce(
-//               ({ width, height }: { width: number; height: number }) => {
-//                 setItemWidth(() => Math.min(MaxPdfWidth, width));
-//                 if (
-//                   (width <= MaxPdfWidth ||
-//                     (lastPageWidth.current < MaxPdfWidth &&
-//                       width > MaxPdfWidth)) &&
-//                   pdf
-//                 ) {
-//                   recomputeListSize();
-//                 }
-//                 lastPageWidth.current = width;
-//               },
-//               300
-//             )}
-//           >
-//             {({ width, height }) => {
-//               if (pdf && numPages.length) {
-//                 const pageRatio = getPageRatio();
-//                 const rowItemWidth = itemWidth - 20;
-//                 return (
-//                   <VList
-//                     ref={(e) => setVListRef(e)}
-//                     style={{ transform: "translateX(-50%)", padding: 10 }}
-//                     overscanRowCount={3}
-//                     rowCount={numPages.length}
-//                     onScroll={({ scrollTop }) =>
-//                       (listScrollTop.current = scrollTop)
-//                     }
-//                     width={width}
-//                     height={height}
-//                     rowHeight={({ index }) =>
-//                       getItemHeight(index, rowItemWidth / pageRatio)
-//                     }
-//                     rowRenderer={({ key, index, style }) =>
-//                       renderItem({ key, index, style, itemWidth: rowItemWidth })
-//                     }
-//                     onRowsRendered={({
-//                       overscanStartIndex,
-//                       overscanStopIndex,
-//                       startIndex,
-//                       stopIndex,
-//                     }) => {
-//                       if (startIndex === 0) {
-//                         renderPdf(1, pdf);
-//                         renderPdf(2, pdf);
-//                       } else {
-//                         const pageNum =
-//                           listStartIndex.current <= startIndex
-//                             ? stopIndex + 1
-//                             : startIndex + 1;
-//                         renderPdf(pageNum, pdf);
-//                       }
-//                       listStartIndex.current = startIndex;
-//                     }}
-//                   />
-//                 );
-//               } else {
-//                 return null;
-//               }
-//             }}
-//           </AutoSizer>
-//         </div>
-//         {isLargeScreen ? (
-//           <div className="pdfReader-scale-button-cot">
-//             <Button
-//               onPress={() => {
-//                 const nextWidth = 1.1 * itemWidth;
-//                 const pageRatio = getPageRatio();
-//                 setItemWidth(nextWidth);
-//                 setHeightDelta((0.1 * itemWidth) / pageRatio);
-//               }}
-//             >
-//               <Plus />
-//             </Button>
-//             <Button
-//               onPress={() => {
-//                 const nextWidth = 0.9 * itemWidth;
-//                 const pageRatio = getPageRatio();
-//                 setItemWidth(nextWidth);
-//                 setHeightDelta((-0.1 * itemWidth) / pageRatio);
-//               }}
-//             >
-//               <Minus />
-//             </Button>
-//           </div>
-//         ) : null}
-//       </div>
-//       <div className="grid grid-rows-[1fr_48px] h-full py-2">
-//         {pdf && (
-//           <Outline
-//             className={
-//               "[&__ul]:pl-6 h-full w-72 flex-shrink-0 overflow-x-hidden"
-//             }
-//             pdf={pdf}
-//             onItemClick={({ pageNumber }) => {
-//               scrollToRow(pageNumber - 1);
-//             }}
-//           />
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
 
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Document, Outline, Page } from "react-pdf";
 import { PDFDocumentProxy } from "pdfjs-dist";
 import { Skeleton } from "@heroui/skeleton";
 import { List as VList } from "react-virtualized";
 import { Tabs, Tab } from "@heroui/tabs";
+import { Tooltip } from "@heroui/tooltip";
+import { Button, ButtonGroup } from "@heroui/button";
+import { Copy, Trash } from "lucide-react";
+import { NavLink } from "react-router-dom";
+import { Card } from "@heroui/card";
 
-import { useDebounceFunction } from "@/hooks/use-debounce-fn";
+import {
+  CategoryFileHighlight,
+  FolderFile,
+  useFoldersStore,
+} from "@/stores/folders";
 import loggers from "@/utils/loggers";
-import { FolderFile, useFoldersStore } from "@/stores/folders";
-import { Card, CardBody } from "@heroui/card";
-import { Popover, PopoverTrigger, PopoverContent } from "@heroui/popover";
-import { createPortal } from "react-dom";
-import TextSelectionPopover from "./text-selection-popover";
+import { useDebounceFunction } from "@/hooks/use-debounce-fn";
+import {
+  getCssSelectorForTextNode,
+  getElementFromCssSelectorAndChildrenIndex,
+  recursiveFindChildrenIndex,
+  recursiveFindNodeByCondition,
+} from "@/utils/dom";
+import { Popover, PopoverContent, PopoverTrigger } from "@heroui/popover";
+import PdfHighlights from "./pdf-highlights";
 
 const PdfViewer = ({
   file,
@@ -336,24 +45,87 @@ const PdfViewer = ({
       height: number;
     }[]
   >([]);
+  const pagesLoaded = useRef(0);
+  const [loadedCompletely, setLoadedCompletely] = useState(false);
   const [scrollRestored, setScrollRestored] = useState(false);
   const [scale, _setScale] = useState(1);
   const updateFile = useFoldersStore((s) => s.updateFile);
+  const addOrSetHighlight = useFoldersStore((s) => s.addOrSetHighlight);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>();
-  const [selection, setSelection] = useState<{} | null>(null);
+  const readerRef = useRef<HTMLDivElement>(null);
+
+  // const [highlights, setHighlights] = useState<
+  //   {
+  //     startNode: Node;
+  //     endNode: Node;
+  //     startOffset: number;
+  //     endOffset: number;
+  //     clientRects: DOMRect[];
+  //   }[]
+  // >([]);
   const numPages = doc?.numPages;
 
   const [width, setWidth] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const vlistRef = useRef<VList | null>(null);
+  // const vlistRef = useRef<VList | null>(null);
   const { debounce } = useDebounceFunction(100);
   const { debounce: updateFileDebounced } = useDebounceFunction(300);
+  const deleteHighlight = useFoldersStore((s) => s.deleteHighlight);
 
   function onItemClick({ pageNumber }: { pageNumber: number }) {
-    if (vlistRef.current) {
-      vlistRef.current?.scrollToRow(pageNumber - 1);
-    }
+    // if (vlistRef.current) {
+    //   vlistRef.current?.scrollToRow(pageNumber - 1);
+    // }
+    document.querySelector(`#p${pageNumber}`)?.scrollIntoView({
+      behavior: "instant",
+      block: "center",
+    });
+    // updateExistingHighlights();
   }
+
+  // function updateExistingHighlights() {
+  //   setHighlights(
+  //     Object.values(folderFile.highlights)
+  //       .map((h) => {
+  //         const startNode = getElementFromCssSelectorAndChildrenIndex(
+  //           h.start.selector,
+  //           h.start.childrenIndex
+  //         );
+  //         const endNode = getElementFromCssSelectorAndChildrenIndex(
+  //           h.end.selector,
+  //           h.end.childrenIndex
+  //         );
+
+  //         if (!startNode || !endNode) return null;
+  //         const range = document.createRange();
+  //         try {
+  //           range.setStart(startNode, h.start.offset);
+  //           range.setEnd(endNode, h.end.offset);
+  //         } catch (err) {
+  //           console.log("Error updating highlight " + h.id, err, {
+  //             startNode,
+  //             endNode,
+  //             startOffset: h.start.offset,
+  //             endOffset: h.end.offset,
+  //           });
+  //         }
+  //         if (!startNode || !endNode) return null;
+  //         const rects = range.getClientRects();
+  //         if (rects.length > 0) {
+  //           return {
+  //             ...h,
+  //             clientRects: Array.from(rects),
+  //             startNode,
+  //             endNode,
+  //             startOffset: h.start.offset,
+  //             endOffset: h.end.offset,
+  //           };
+  //         }
+  //         return null;
+  //       })
+  //       .filter((h) => h !== null)
+  //   );
+  // }
 
   useEffect(() => {
     // Put a resize observer on the wrapper to get the width of the document
@@ -362,9 +134,9 @@ const PdfViewer = ({
         const { width } = entry.contentRect;
         debounce(() => {
           setWidth(width);
-          if (vlistRef.current) {
-            vlistRef.current?.recomputeRowHeights();
-          }
+          // if (vlistRef.current) {
+          //   vlistRef.current?.recomputeRowHeights();
+          // }
         });
       }
     });
@@ -378,16 +150,17 @@ const PdfViewer = ({
       resizeObserver.disconnect();
     };
   }, []);
-
+  console.log("loadedCompletely", loadedCompletely);
   return (
     <div
       className="relative flex justify-between h-full gap-8 overflow-hidden"
       data-text-reader="true"
+      ref={readerRef}
     >
       <Document
         inputRef={wrapperRef}
         className={
-          "h-full overflow-y-auto mx-auto overflow-x-hidden flex-grow max-w-screen-md"
+          "h-full overflow-y-auto relative mx-auto overflow-x-hidden flex-grow max-w-screen-md"
         }
         file={file}
         onLoadSuccess={async (d) => {
@@ -406,71 +179,203 @@ const PdfViewer = ({
         }}
         loading={<Skeleton className="w-full h-full rounded-lg" />}
       >
-        {numPages && width && pagesSizes.length === numPages && (
-          // @ts-ignore
-          <VList
-            ref={vlistRef}
-            scrollTop={
-              scrollRestored ? undefined : folderFile?.scrollPosition || 0
-            }
-            width={width}
-            height={wrapperRef.current?.clientHeight || 0}
-            rowCount={numPages}
-            onRowsRendered={() => {
-              if (scrollRestored) return;
-              setScrollRestored(true);
-            }}
-            onScroll={({ scrollTop }) => {
-              if (folderFile && scrollRestored) {
-                updateFileDebounced(() => {
-                  const bounds: DOMRect =
-                    wrapperRef.current?.getBoundingClientRect()!;
-                  const pageElements = document.elementsFromPoint(
-                    bounds.x + bounds.width / 2,
-                    bounds.y + bounds.height / 2
-                  );
-                  const pageNumber = pageElements
-                    .find((el) => el.hasAttribute("data-page-number"))
-                    ?.getAttribute("data-page-number");
-                  updateFile(
-                    {
-                      ...folderFile,
-                      scrollPosition: scrollTop,
-                      readPages: Number(pageNumber),
-                    },
-                    folderId
-                  );
-                });
-              }
-            }}
-            rowHeight={({ index }) =>
-              pagesSizes[index].height * (width / pagesSizes[index].width)
-            }
-            rowRenderer={({ index, style }) => (
-              <Page
-                className={"!bg-transparent relative"}
-                devicePixelRatio={Math.min(2, window.devicePixelRatio)}
-                width={width}
-                key={`page_${index + 1}`}
-                canvasBackground={
-                  document.documentElement.style.getPropertyValue(
-                    "--bg-color"
-                  ) || "white"
-                }
-                inputRef={(e) => {
-                  if (e) {
-                    e.style.setProperty("width", `${width}px`);
-                    e.style.setProperty("position", "absolute");
-                    e.style.setProperty("top", style.top + "px");
-                    e.style.setProperty("left", style.left + "px");
-                  }
+        <PdfHighlights
+          folderId={folderId}
+          folderFile={folderFile}
+          readerRef={readerRef}
+          pagesLoaded={loadedCompletely}
+        />
+        {
+          numPages &&
+            width &&
+            pagesSizes.length === numPages &&
+            Array.from({ length: numPages }).map((_, index) => (
+              <MemoizedPage
+                onRenderTextLayerSuccess={() => {
+                  pagesLoaded.current++;
+                  console.log("Loaded page", pagesLoaded.current);
+                  setLoadedCompletely(pagesLoaded.current >= numPages);
                 }}
-                pageNumber={index + 1}
+                key={`page-${index + 1}`}
+                index={index}
+                width={width}
               />
-            )}
-          />
-        )}
+            ))
+          //  (
+          // @ts-ignore
+          // <VList
+          //   ref={vlistRef}
+          //   scrollTop={
+          //     scrollRestored ? undefined : folderFile?.scrollPosition || 0
+          //   }
+          //   width={width}
+          //   height={wrapperRef.current?.clientHeight || 0}
+          //   rowCount={numPages}
+          //   onRowsRendered={() => {
+          //     if (scrollRestored) return;
+          //     setScrollRestored(true);
+          //   }}
+          //   onScroll={({ scrollTop }) => {
+          //     // updateExistingHighlights();
+
+          //     // Update selection highlight positions
+          //     if (selectionRange) {
+          //       const clientRects = document.createRange();
+          //       clientRects.setStart(
+          //         selectionRange.startNode,
+          //         selectionRange.startOffset
+          //       );
+          //       clientRects.setEnd(
+          //         selectionRange.endNode,
+          //         selectionRange.endOffset
+          //       );
+          //       const rects = clientRects.getClientRects();
+
+          //       if (rects.length > 0) {
+          //         setSelectionRange({
+          //           ...selectionRange,
+          //           clientRects: Array.from(rects),
+          //         });
+          //       }
+          //     }
+
+          //     if (folderFile && scrollRestored) {
+          //       updateFileDebounced(() => {
+          //         const bounds: DOMRect =
+          //           wrapperRef.current?.getBoundingClientRect()!;
+          //         const pageElements = document.elementsFromPoint(
+          //           bounds.x + bounds.width / 2,
+          //           bounds.y + bounds.height / 2
+          //         );
+          //         const pageNumber = pageElements
+          //           .find((el) => el.hasAttribute("data-page-number"))
+          //           ?.getAttribute("data-page-number");
+          //         updateFile(
+          //           {
+          //             ...folderFile,
+          //             scrollPosition: scrollTop,
+          //             readPages: Number(pageNumber),
+          //           },
+          //           folderId
+          //         );
+          //       });
+          //     }
+          //   }}
+          //   rowHeight={({ index }) =>
+          //     pagesSizes[index].height * (width / pagesSizes[index].width)
+          //   }
+          //   rowRenderer={({ index, style }) => (
+          //     <div
+          //       className="relative"
+          //       style={{ width: width }}
+          //       key={`page_${index + 1}`}
+          //     >
+          //       <Page
+          //         className={"!bg-transparent relative"}
+          //         devicePixelRatio={Math.min(2, window.devicePixelRatio)}
+          //         width={width}
+          //         canvasBackground={
+          //           document.documentElement.style.getPropertyValue(
+          //             "--bg-color"
+          //           ) || "white"
+          //         }
+          //         inputRef={(e) => {
+          //           if (e) {
+          //             e.style.setProperty("width", `${width}px`);
+          //             e.style.setProperty("position", "absolute");
+          //             e.style.setProperty("top", style.top + "px");
+          //             e.style.setProperty("left", style.left + "px");
+          //             e.id = `p${index + 1}`;
+          //           }
+          //         }}
+          //         pageNumber={index + 1}
+          //       />
+          //       {folderId &&
+          //         folderFile.id &&
+          //         Object.values(folderFile.highlights)
+          //           .filter(
+          //             (h) =>
+          //               h.start.pageIndex === index || h.end.pageIndex === index
+          //           )
+          //           .flatMap((h, i) => {
+          //             const startingPageNode = document.querySelector(
+          //               `#p${h.start.pageIndex} .react-pdf__Page__textContent`
+          //             );
+          //             const endingPageNode = document.querySelector(
+          //               `#p${h.end.pageIndex} .react-pdf__Page__textContent`
+          //             );
+
+          //             const startNode = startingPageNode?.childNodes[
+          //               h.start.childrenIndex
+          //             ] as HTMLElement | null;
+          //             const endNode = endingPageNode?.childNodes[
+          //               h.end.childrenIndex
+          //             ] as HTMLElement | null;
+          //             if (!startNode || !endNode) return null;
+          //             const range = document.createRange();
+          //             try {
+          //               range.setStart(startNode, h.start.offset);
+          //               range.setEnd(endNode, h.end.offset);
+          //             } catch (err) {
+          //               return null;
+          //             }
+          //             const rects = range.getClientRects();
+          //             return Array.from(rects).map((rect, index) => {
+          //               return (
+          //                 <NavLink
+          //                   key={`highlight-${h.id}-${index}`}
+          //                   to={`/folder/${folderId}/file/${folderFile.id}?highlight=${h.id}`}
+          //                   className="absolute"
+          //                   style={{
+          //                     width: rect.width,
+          //                     height: rect.height,
+          //                     top: rect.top,
+          //                     left: rect.left,
+          //                     backgroundColor: "rgba(255, 0, 255, 0.327)",
+          //                   }}
+          //                 />
+          //               );
+          //             });
+          //           })}
+          //     </div>
+          //   )}
+          // />
+
+          // )
+        }
       </Document>
+
+      {/* {folderId &&
+        folderFile.id &&
+        highlights.flatMap((h, index) => {
+          const startNode = h.startNode;
+          const endNode = h.endNode;
+          const range = document.createRange();
+          try {
+            range.setStart(startNode, h.startOffset);
+            range.setEnd(endNode, h.endOffset);
+          } catch (err) {
+            return null;
+          }
+          const hid = Object.values(folderFile.highlights)[index].id;
+          const rects = range.getClientRects();
+          return Array.from(rects).map((rect, index) => {
+            return (
+              <NavLink
+                key={`highlight-${hid}-${index}`}
+                to={`/folder/${folderId}/file/${folderFile.id}?highlight=${hid}`}
+                className="fixed inset-0"
+                style={{
+                  width: rect.width,
+                  height: rect.height,
+                  top: rect.top,
+                  left: rect.left,
+                  backgroundColor: "rgba(255, 0, 255, 0.327)",
+                }}
+              />
+            );
+          });
+        })} */}
 
       <div className="flex-shrink-0 h-[calc(100%-32px)] py-4 overflow-visible w-72">
         <Tabs
@@ -494,12 +399,80 @@ const PdfViewer = ({
               />
             )}
           </Tab>
-          <Tab key="highlights" title="Highlights"></Tab>
-          <Tab key="notes" title="Notes"></Tab>
+          <Tab key="highlights" title="Highlights">
+            <div className="flex flex-col gap-2 px-2">
+              {Object.values(folderFile.highlights).map((highlight) => (
+                <div key={highlight.id + "h"}>
+                  <hgroup className="px-2 py-0.5 mx-2 flex justify-between gap-1 items-center text-xs rounded-t-lg bg-white/60">
+                    <h4 className="text-primary-900">
+                      Page {highlight.start.pageIndex + 1}
+                    </h4>
+                    <Button
+                      variant="light"
+                      className="h-auto min-w-0 p-2 aspect-square"
+                      color="danger"
+                      onPress={() =>
+                        deleteHighlight(folderId, folderFile.id!, highlight.id!)
+                      }
+                    >
+                      <Trash size={12} />
+                    </Button>
+                  </hgroup>
+                  <Card
+                    isPressable
+                    onPress={() =>
+                      onItemClick({ pageNumber: highlight.start.pageIndex + 1 })
+                    }
+                    as={Button}
+                    className="items-start w-full min-w-0 py-2"
+                  >
+                    <p>{highlight.text}</p>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          </Tab>
+          <Tab key="notes" title="Notes" />
         </Tabs>
       </div>
     </div>
   );
 };
+
+const MemoizedPage = memo(
+  ({
+    width,
+    index,
+    onRenderTextLayerSuccess,
+  }: {
+    width: number;
+    index: number;
+    onRenderTextLayerSuccess: () => void;
+  }) => {
+    return (
+      <Page
+        onRenderTextLayerSuccess={onRenderTextLayerSuccess}
+        key={`page-${index + 1}`}
+        className={"!bg-transparent relative"}
+        devicePixelRatio={Math.min(2, window.devicePixelRatio)}
+        width={width}
+        canvasBackground={
+          document.documentElement.style.getPropertyValue("--bg-color") ||
+          "white"
+        }
+        inputRef={(e) => {
+          if (e) {
+            e.id = `p${index + 1}`;
+          }
+        }}
+        pageNumber={index + 1}
+      />
+    );
+  },
+  (prevProps, nextProps) => {
+    return prevProps.index === nextProps.index;
+  }
+);
+MemoizedPage.displayName = "MemoizedPage";
 
 export default PdfViewer;

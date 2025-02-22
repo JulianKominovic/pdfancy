@@ -60,6 +60,7 @@
     "@react-types/shared": "3.26.0",
     "clsx": "2.1.1",
     "css-selector-generator": "3.6.9",
+    "deepmerge": "^4.3.1",
     "framer-motion": "11.15.0",
     "lucide-react": "0.475.0",
     "pdfjs-dist": "4.8.69",

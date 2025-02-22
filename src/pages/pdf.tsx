@@ -10,10 +10,8 @@ import { applyFolderColor } from "@/utils/customize";
 const PdfPage = () => {
   const { folderId, fileId } = useParams();
   const [file, setFile] = useState<File | undefined>();
-  const folder = useFoldersStore((s) =>
-    s.folders.find((f) => f.id === folderId)
-  );
-  const folderFile = folder?.files.find((f) => f.id === fileId);
+  const folder = useFoldersStore((s) => s.folders[folderId as string]);
+  const folderFile = folder?.files[fileId as string];
 
   useEffect(() => {
     if (fileId)
