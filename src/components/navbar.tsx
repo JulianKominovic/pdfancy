@@ -6,7 +6,6 @@ import { Chip } from "@heroui/chip";
 
 import { PASTEL_COLORS } from "@/constants";
 import vFilesCache from "@/storage/cache/files";
-import { stringToHsl } from "@/utils/color";
 import { useFoldersStore } from "@/stores/folders";
 
 export const Navbar = () => {

@@ -32,7 +32,6 @@ const FolderFiles = ({ folder }: { folder: Folder }) => {
             metadata?.["CreationDate"] ||
             (fileMetadata.info as any)?.["CreationDate"] ||
             "",
-          scrollPosition: 0,
           readPages: 0,
           pages: pages,
           highlights: {},

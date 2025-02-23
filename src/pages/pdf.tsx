@@ -9,7 +9,7 @@ import { applyFolderColor } from "@/utils/customize";
 
 const PdfPage = () => {
   const { folderId, fileId } = useParams();
-  const [file, setFile] = useState<Uint8Array<ArrayBufferLike> | undefined>();
+  const [file, setFile] = useState<Uint8Array | undefined>();
   const folder = useFoldersStore((s) => s.folders[folderId as string]);
   const folderFile = folder?.files[fileId as string];
 

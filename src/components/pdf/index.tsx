@@ -39,7 +39,7 @@ function PdfViewer({
   folderFile,
   folderId,
 }: {
-  file: Uint8Array<ArrayBufferLike>;
+  file: Uint8Array;
   folderFile: FolderFile;
   folderId: string;
 }) {
