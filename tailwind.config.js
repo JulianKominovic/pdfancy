@@ -1,5 +1,5 @@
 import { heroui } from "@heroui/theme";
-
+import containerQueries from "@tailwindcss/container-queries";
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -292,5 +292,6 @@ module.exports = {
     //   },
     // }),
     heroui(),
+    containerQueries,
   ],
 };

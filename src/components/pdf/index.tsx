@@ -142,7 +142,7 @@ function PdfViewer({
   const updateFile = useFoldersStore((state) => state.updateFile);
   return (
     <Worker workerUrl="/pdfjs-dist-3.4.120.js">
-      <div className="relative flex justify-between h-full gap-8 overflow-hidden">
+      <div className="relative flex justify-between h-full gap-8 overflow-hidden @container">
         <Viewer
           initialPage={folderFile.readPages}
           onPageChange={({ currentPage }) => {
@@ -165,7 +165,7 @@ function PdfViewer({
             bookmarkPluginInstance,
           ]}
         />
-        <div className="flex-shrink-0 h-[calc(100%-32px)] py-4 overflow-visible w-72">
+        <div className="flex-shrink-0 @3xl:block hidden h-[calc(100%-32px)] py-4 overflow-visible w-72">
           <Tabs
             aria-label="Options"
             classNames={{
