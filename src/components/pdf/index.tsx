@@ -1,35 +1,40 @@
 /* eslint-disable react/display-name */
-import React, { useState } from "react";
+import React from "react";
 import {
-  Position,
+  SpecialZoomLevel,
   TextDirection,
-  Tooltip,
   Viewer,
   Worker,
-  PageLayout,
 } from "@react-pdf-viewer/core";
 import {
   highlightPlugin,
-  RenderHighlightContentProps,
   RenderHighlightTargetProps,
 } from "@react-pdf-viewer/highlight";
+import { zoomPlugin, RenderZoomProps } from "@react-pdf-viewer/zoom";
+import { bookmarkPlugin } from "@react-pdf-viewer/bookmark";
+import "@react-pdf-viewer/bookmark/lib/styles/index.css";
+// Import styles
+import "@react-pdf-viewer/zoom/lib/styles/index.css";
 
 // Import styles
 import "@react-pdf-viewer/highlight/lib/styles/index.css";
 // Import the styles
 import "@react-pdf-viewer/core/lib/styles/index.css";
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Card } from "@heroui/card";
 import { ButtonGroup, Button } from "@heroui/button";
 import {
-  Copy,
+  ChevronsLeftRight,
   HighlighterIcon,
+  Maximize2Icon,
   MessageSquareMoreIcon,
-  SaveIcon,
   Trash,
+  ZoomInIcon,
+  ZoomOutIcon,
 } from "lucide-react";
-import { FolderFile, useFoldersStore } from "@/stores/folders";
 import { Tab, Tabs } from "@heroui/tabs";
 import { Textarea } from "@heroui/input";
+
+import { FolderFile, useFoldersStore } from "@/stores/folders";
 
 function PdfViewer({
   file,
@@ -42,6 +47,12 @@ function PdfViewer({
 }) {
   const addOrSetHighlight = useFoldersStore((state) => state.addOrSetHighlight);
   const deleteHighlight = useFoldersStore((state) => state.deleteHighlight);
+  const bookmarkPluginInstance = bookmarkPlugin();
+
+  const { Bookmarks } = bookmarkPluginInstance;
+  const zoomPluginInstance = zoomPlugin({
+    enableShortcuts: false,
+  });
   const highlightPluginInstance = highlightPlugin({
     renderHighlights(props) {
       return (
@@ -134,12 +145,17 @@ function PdfViewer({
     <Worker workerUrl="/pdfjs-dist-3.4.120.js">
       <div className="relative flex justify-between h-full gap-8 overflow-hidden">
         <Viewer
+        onPageChange={()=>}
           theme={{
             direction: TextDirection.LeftToRight,
             theme: "light",
           }}
           fileUrl={file}
-          plugins={[highlightPluginInstance]}
+          plugins={[
+            highlightPluginInstance,
+            zoomPluginInstance,
+            bookmarkPluginInstance,
+          ]}
         />
         <div className="flex-shrink-0 h-[calc(100%-32px)] py-4 overflow-visible w-72">
           <Tabs
@@ -153,16 +169,7 @@ function PdfViewer({
             }}
           >
             <Tab key="outline" title="Outline">
-              {/* {doc && (
-            <Outline
-              className={
-                "[&__ul]:pl-6 [&__ul]:space-y-2 [&__li]:text-primary-900/60 [&__a:hover]:underline [&__a:hover]:underline-offset-2 [&__a:hover]:text-primary-900 h-full w-full"
-              }
-              pdf={doc}
-              onItemClick={onItemClick}
-            />
-          )} */}
-              a
+              <Bookmarks isBookmarkExpanded={() => true} />
             </Tab>
             <Tab key="highlights" title="Highlights">
               <div className="flex flex-col gap-2 px-2">
@@ -230,6 +237,44 @@ function PdfViewer({
             </Tab>
           </Tabs>
         </div>
+        <ButtonGroup
+          className="fixed w-auto h-10 -translate-x-1/2 bottom-2 rounded-medium bg-content2 left-1/2"
+          color="secondary"
+          variant="shadow"
+        >
+          <zoomPluginInstance.Zoom>
+            {({ scale, onZoom }) => {
+              return (
+                <>
+                  <Button
+                    className="min-w-0"
+                    onPress={() => onZoom(scale + 0.1)}
+                  >
+                    <ZoomInIcon size={16} />
+                  </Button>
+                  <Button
+                    className="min-w-0"
+                    onPress={() => onZoom(SpecialZoomLevel.PageWidth)}
+                  >
+                    Fit to page
+                  </Button>
+                  <Button
+                    className="min-w-0"
+                    onPress={() => onZoom(SpecialZoomLevel.PageFit)}
+                  >
+                    Fit to width
+                  </Button>
+                  <Button
+                    className="min-w-0"
+                    onPress={() => onZoom(scale - 0.1)}
+                  >
+                    <ZoomOutIcon size={16} />
+                  </Button>
+                </>
+              );
+            }}
+          </zoomPluginInstance.Zoom>
+        </ButtonGroup>
       </div>
     </Worker>
   );
