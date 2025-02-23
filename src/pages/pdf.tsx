@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Skeleton } from "@heroui/skeleton";
 
-import PdfViewer from "@/components/pdf-viewer";
+import PdfViewer from "@/components/pdf";
 import vFilesCache from "@/storage/cache/files";
 import { useCategoriesStore } from "@/stores/categories";
 import { applyCategoryColor } from "@/utils/customize";
