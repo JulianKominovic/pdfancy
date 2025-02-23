@@ -27,7 +27,7 @@ import {
   SaveIcon,
   Trash,
 } from "lucide-react";
-import { FolderFile } from "@/stores/folders";
+import { FolderFile, useFoldersStore } from "@/stores/folders";
 import { Tab, Tabs } from "@heroui/tabs";
 import { Textarea } from "@heroui/input";
 
@@ -40,61 +40,34 @@ function PdfViewer({
   folderFile: FolderFile;
   folderId: string;
 }) {
+  const addOrSetHighlight = useFoldersStore((state) => state.addOrSetHighlight);
+  const deleteHighlight = useFoldersStore((state) => state.deleteHighlight);
   const highlightPluginInstance = highlightPlugin({
-    // renderHighlightContent: ({cancel, highlightAreas,previewImage,selectedText,selectionRegion,selectionData,}: RenderHighlightContentProps) => {
-    //     const addNote = () => {
-    //         // Only add message if it's not empty
-    //         if (message !== '') {
-    //             const note: Note = {
-    //                 // Increase the id manually
-    //                 id: ++noteId,
-    //                 content: message,
-    //                 highlightAreas: props.highlightAreas,
-    //                 quote: props.selectedText,
-    //             };
-    //             setNotes(notes.concat([note]));
-
-    //             // Close the form
-    //             props.cancel();
-    //         }
-    //     };
-
-    //   return (
-    //     <form
-    //       style={{
-    //         background: "#fff",
-    //         border: "1px solid rgba(0, 0, 0, .3)",
-    //         borderRadius: "2px",
-    //         padding: "8px",
-    //         position: "absolute",
-    //         left: `${selectionRegion.left}%`,
-    //         top: `${selectionRegion.top + selectionRegion.height}%`,
-    //         zIndex: 1,
-    //       }}
-    //     >
-    //       <div>
-    //         <textarea
-    //           rows={3}
-    //           style={{
-    //             border: "1px solid rgba(0, 0, 0, .3)",
-    //           }}
-    //           // onChange={(e) => setMessage(e.target.value)}
-    //         ></textarea>
-    //       </div>
-    //       <div
-    //         style={{
-    //           display: "flex",
-    //           marginTop: "8px",
-    //         }}
-    //       >
-    //         <div style={{ marginRight: "8px" }}>
-    //           <Button onPress={addNote}>Add</Button>
-    //         </div>
-    //         <Button onPress={cancel}>Cancel</Button>
-    //       </div>
-    //     </form>
-    //   );
-    // },
+    renderHighlights(props) {
+      return (
+        <div>
+          {Object.values(folderFile.highlights).map((highlight) => (
+            <React.Fragment key={highlight.id}>
+              {highlight.tracking
+                .filter((area) => area.pageIndex === props.pageIndex)
+                .map((area, idx) => (
+                  <Button
+                    key={idx}
+                    variant="light"
+                    color="primary"
+                    className="z-10 min-w-0 cursor-pointer"
+                    style={{
+                      ...props.getCssProperties(area, props.rotation),
+                      background: "yellow",
+                      opacity: 0.4,
+                    }}
+                  />
+                ))}
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    },
     renderHighlightTarget: (props: RenderHighlightTargetProps) => {
       const wrapper = document.querySelector('[data-testid="core__viewer"]');
       const wrapperWidth = wrapper!.clientWidth!;
@@ -134,7 +107,18 @@ function PdfViewer({
             variant="shadow"
             className="text-black bg-content2 rounded-medium shadow-medium"
           >
-            <Button className="text-primary-800">
+            <Button
+              className="text-primary-800"
+              onPress={() => {
+                addOrSetHighlight(folderId, folderFile.id!, {
+                  color: "red",
+                  reflections: [],
+                  text: props.selectedText,
+                  tracking: props.highlightAreas,
+                });
+                props.cancel();
+              }}
+            >
               <HighlighterIcon size={16} /> Highlight
             </Button>
             <Button className="text-primary-800">
@@ -145,6 +129,7 @@ function PdfViewer({
       );
     },
   });
+  const { jumpToHighlightArea } = highlightPluginInstance;
   return (
     <Worker workerUrl="/pdfjs-dist-3.4.120.js">
       <div className="relative flex justify-between h-full gap-8 overflow-hidden">
@@ -177,6 +162,7 @@ function PdfViewer({
               onItemClick={onItemClick}
             />
           )} */}
+              a
             </Tab>
             <Tab key="highlights" title="Highlights">
               <div className="flex flex-col gap-2 px-2">
@@ -184,26 +170,28 @@ function PdfViewer({
                   <div key={highlight.id + "h"}>
                     <hgroup className="px-2 py-0.5 mx-2 flex justify-between gap-1 items-center text-xs rounded-t-lg bg-white/60">
                       <h4 className="text-primary-900">
-                        Page {highlight.tracking.pageIndex + 1}
+                        Page {highlight.tracking[0].pageIndex + 1}
                       </h4>
                       <Button
                         variant="light"
                         className="h-auto min-w-0 p-2 aspect-square"
                         color="danger"
-                        onPress={
-                          () => {}
-                          //   deleteHighlight(folderId, folderFile.id!, highlight.id!)
-                        }
+                        onPress={() => {
+                          deleteHighlight(
+                            folderId,
+                            folderFile.id!,
+                            highlight.id!
+                          );
+                        }}
                       >
                         <Trash size={12} />
                       </Button>
                     </hgroup>
                     <Card
                       isPressable
-                      onPress={
-                        () => {}
-                        // onItemClick({ pageNumber: highlight.start.pageIndex + 1 })
-                      }
+                      onPress={() => {
+                        jumpToHighlightArea(highlight.tracking[0]);
+                      }}
                       as={Button}
                       className="items-start w-full min-w-0 py-2"
                     >
@@ -235,7 +223,11 @@ function PdfViewer({
                 ))}
               </div>
             </Tab>
-            <Tab key="notes" title="Notes" />
+            <Tab key="notes" title="Notes">
+              <div>
+                <h1>Notes</h1>
+              </div>
+            </Tab>
           </Tabs>
         </div>
       </div>

@@ -34,7 +34,7 @@ const foldersDb = new Promise<IDBDatabase>((resolve, reject) => {
 
 export type CategoryFileHighlight = {
   id?: string;
-  tracking: HighlightArea;
+  tracking: HighlightArea[];
   text: string;
   reflections: any[];
   color: string;
