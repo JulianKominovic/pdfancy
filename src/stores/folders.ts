@@ -46,7 +46,6 @@ export type FolderFile = {
   name: string;
   date?: string;
   creator?: string;
-  scrollPosition?: number;
   readPages: number;
   pages: number;
   highlights: Record<string, CategoryFileHighlight>;

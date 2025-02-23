@@ -10,7 +10,7 @@ import {
   highlightPlugin,
   RenderHighlightTargetProps,
 } from "@react-pdf-viewer/highlight";
-import { zoomPlugin, RenderZoomProps } from "@react-pdf-viewer/zoom";
+import { zoomPlugin } from "@react-pdf-viewer/zoom";
 import { bookmarkPlugin } from "@react-pdf-viewer/bookmark";
 import "@react-pdf-viewer/bookmark/lib/styles/index.css";
 // Import styles
@@ -23,9 +23,7 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import { Card } from "@heroui/card";
 import { ButtonGroup, Button } from "@heroui/button";
 import {
-  ChevronsLeftRight,
   HighlighterIcon,
-  Maximize2Icon,
   MessageSquareMoreIcon,
   Trash,
   ZoomInIcon,
@@ -141,11 +139,21 @@ function PdfViewer({
     },
   });
   const { jumpToHighlightArea } = highlightPluginInstance;
+  const updateFile = useFoldersStore((state) => state.updateFile);
   return (
     <Worker workerUrl="/pdfjs-dist-3.4.120.js">
       <div className="relative flex justify-between h-full gap-8 overflow-hidden">
         <Viewer
-        onPageChange={()=>}
+          initialPage={folderFile.readPages}
+          onPageChange={({ currentPage }) => {
+            updateFile(
+              {
+                ...folderFile,
+                readPages: currentPage,
+              },
+              folderId
+            );
+          }}
           theme={{
             direction: TextDirection.LeftToRight,
             theme: "light",
