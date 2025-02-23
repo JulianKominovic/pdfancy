@@ -1,9 +1,7 @@
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { pdfjs } from "react-pdf";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?worker";
-pdfjs.GlobalWorkerOptions.workerPort = new pdfWorker();
-
+import { GlobalWorkerOptions } from "pdfjs-dist";
+GlobalWorkerOptions.workerSrc = "/pdfjs-dist-3.4.120.js";
 import App from "./routes.tsx";
 import { Provider } from "./provider.tsx";
 import "@/styles/globals.css";

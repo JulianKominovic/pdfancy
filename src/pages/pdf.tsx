@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Skeleton } from "@heroui/skeleton";
 
-import PdfViewer from "@/components/pdf-viewer";
+import PdfViewer from "@/components/pdf";
 import vFilesCache from "@/storage/cache/files";
 import { useFoldersStore } from "@/stores/folders";
 import { applyFolderColor } from "@/utils/customize";
 
 const PdfPage = () => {
   const { folderId, fileId } = useParams();
-  const [file, setFile] = useState<File | undefined>();
+  const [file, setFile] = useState<Uint8Array<ArrayBufferLike> | undefined>();
   const folder = useFoldersStore((s) => s.folders[folderId as string]);
   const folderFile = folder?.files[fileId as string];
 
@@ -17,11 +17,8 @@ const PdfPage = () => {
     if (fileId)
       vFilesCache.getFile(fileId).then((response) => {
         if (response) {
-          response.blob().then((blob) => {
-            const file = new File([blob], fileId, {
-              type: "application/pdf",
-            });
-            setFile(file);
+          response.arrayBuffer().then((arrayBuffer) => {
+            setFile(new Uint8Array(arrayBuffer));
           });
         }
       });

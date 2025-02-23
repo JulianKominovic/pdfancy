@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
+import deepmerge from "deepmerge";
 
 import vFilesCache from "@/storage/cache/files";
 import loggers from "@/utils/loggers";
-import deepmerge from "deepmerge";
+import { HighlightArea } from "@react-pdf-viewer/highlight";
 const foldersDb = new Promise<IDBDatabase>((resolve, reject) => {
   const openRequest = indexedDB.open("folders", 1);
 
@@ -33,16 +34,7 @@ const foldersDb = new Promise<IDBDatabase>((resolve, reject) => {
 
 export type CategoryFileHighlight = {
   id?: string;
-  start: {
-    pageIndex: number;
-    childrenIndex: number;
-    offset: number;
-  };
-  end: {
-    pageIndex: number;
-    childrenIndex: number;
-    offset: number;
-  };
+  tracking: HighlightArea;
   text: string;
   reflections: any[];
   color: string;
